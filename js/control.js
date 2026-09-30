@@ -33,6 +33,7 @@ function init() {
   document.addEventListener("dragover", event => event.preventDefault());
   document.addEventListener("drop", event => event.preventDefault());
 
+  document.getElementById("csvEventName").value = loadSetting("csvEventName") ?? "";
   onClick("loadSample", loadSample);
   onClick("openDisplay", openDisplay);
   onClick("back", retreat);
@@ -81,14 +82,33 @@ function readDataFile(file, input) {
   let reader = new FileReader();
   reader.onload = () => {
     try {
-      start(parseDataFile(reader.result));
+      let text = decodeText(reader.result);
+      if (isCsvStartlist(text)) {
+        // start list exported by EasyWk, see startlist-csv.js
+        let eventName = document.getElementById("csvEventName").value.trim();
+        saveSetting("csvEventName", eventName);
+        let data = parseCsvStartlist(text, eventName);
+        validateData(data);
+        start(data);
+      } else {
+        start(parseDataFile(text));
+      }
     } catch (e) {
       showUploadError(`Die Datei konnte nicht gelesen werden: ${e.message}`);
       input.value = "";
     }
   };
   reader.onerror = () => showUploadError("Die Datei konnte nicht gelesen werden.");
-  reader.readAsText(file, "utf-8");
+  reader.readAsArrayBuffer(file);
+}
+// UTF-8, or Windows-1252 as used by EasyWk's CSV export (umlauts would
+// break otherwise)
+function decodeText(buffer) {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(buffer).replace(/^\uFEFF/, "");
+  } catch (e) {
+    return new TextDecoder("windows-1252").decode(buffer);
+  }
 }
 // Demonstration with the sample data in data/sample.json. Browsers only
 // allow reading it when the page comes from a web server, not from a file

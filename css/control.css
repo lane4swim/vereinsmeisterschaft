@@ -304,3 +304,11 @@ kbd {
 #demoBadge[hidden] {
     display: none;
 }
+#csvOption {
+    font-size: 14pt;
+    color: #444;
+}
+#csvOption input {
+    width: 18em;
+    font-size: inherit;
+}

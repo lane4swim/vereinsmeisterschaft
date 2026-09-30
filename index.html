@@ -4,6 +4,7 @@
   <title>Regie – Vereinsmeisterschaften</title>
   <link rel="stylesheet" href="css/control.css">
   <script src="js/datafile.js"></script>
+  <script src="js/startlist-csv.js"></script>
   <script src="js/control.js"></script>
  </head>
  <body onload="init()">
@@ -12,8 +13,12 @@
    <label for="dataFile" id="dropZone">
     Datendatei hierher ziehen
     <span>oder</span>
-    <input type="file" id="dataFile" accept=".js,.json,.txt">
+    <input type="file" id="dataFile" accept=".json,.csv,.js,.txt">
    </label>
+   <p id="csvOption">
+    <label>Name der Veranstaltung für CSV-Startlisten:
+     <input type="text" id="csvEventName" placeholder="leer: Vereinsmeisterschaften + Jahr"></label>
+   </p>
    <p id="uploadError"></p>
    <p id="demo">
     Zum Ausprobieren:
