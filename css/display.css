@@ -51,6 +51,9 @@ body {
     --u: min(1vh, 0.5625vw);
     display: grid;
     grid-template-rows: auto 1fr auto;
+    /* never wider than the screen, however long a text is (a long title
+       used to widen the page and push columns off the right edge) */
+    grid-template-columns: minmax(0, 1fr);
     gap: calc(2 * var(--u));
     height: 100vh;
     padding: calc(2 * var(--u)) calc(3 * var(--u));
@@ -75,6 +78,7 @@ header h1 {
     font-size: inherit;
     white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
 }
 #heatBox {
     white-space: nowrap;
@@ -141,8 +145,8 @@ main:not(.withClub) .club {
 td.club {
     font-size: calc(0.8 * min(calc(7 * var(--u)), calc(40 * var(--u) / var(--lanes, 4))));
 }
-/* long names and clubs may take two lines (see fitText in display.js) */
-td.twoLines {
+/* long names, clubs and titles may take two lines (see fitText in display.js) */
+.twoLines {
     white-space: normal;
     line-height: 1.1;
 }
@@ -151,9 +155,11 @@ tr:not(:last-child) > * {
     border-bottom: calc(0.3 * var(--u)) solid #666;
 }
 #next {
+    min-width: 0;
     font-size: calc(4.5 * var(--u));
     white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
 }
 #next[hidden] {
     display: block;

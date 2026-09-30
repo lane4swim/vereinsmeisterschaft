@@ -119,8 +119,9 @@ function showHeat(heat, next) {
   document.getElementById("nextCompetition").textContent = next ?? "";
 }
 // Shrink text that does not fit its box (long names, long competition
-// names) instead of cutting it off. Names and clubs that would get too
-// small on one line are put on two lines instead.
+// names) instead of cutting it off. Names, clubs and the title that would
+// get too small on one line are put on two lines instead; anything else
+// ends in "…" if it still does not fit at half size.
 function fitText(element) {
   element.style.fontSize = "";
   element.classList.remove("twoLines");
@@ -128,7 +129,7 @@ function fitText(element) {
   let size = shrink(element, base, base * 0.7, () => element.scrollWidth > element.clientWidth);
   if (element.scrollWidth <= element.clientWidth)
     return;
-  if (!element.matches("td.name, td.club")) {
+  if (!element.matches("td.name, td.club, header h1")) {
     shrink(element, size, base * 0.5, () => element.scrollWidth > element.clientWidth);
     return;
   }
