@@ -4,7 +4,8 @@
 let data = null;
 let heatList = [];      // all heats in running order, see buildHeatList()
 // "welcome": the welcome screen is shown and `index` is the heat that
-// follows it; "heat": heat `index` is shown.
+// follows it (heatList.length after the last heat); "heat": heat `index`
+// is shown.
 let position = { view: "welcome", index: 0 };
 
 let displayWindow = null;
@@ -88,10 +89,10 @@ function start(newData) {
 
 /* ================= NAVIGATION =================  */
 function advance() {
-  if (position.view == "welcome")
-    position.view = "heat";
-  else if (position.index < heatList.length - 1)
-    position.index++;
+  let next = nextPosition();
+  if (!next)
+    return;
+  position = next;
   update();
 }
 function retreat() {
@@ -112,19 +113,22 @@ function retreat() {
 function welcomeBreak() {
   if (position.view == "welcome")
     return;
-  position = { view: "welcome", index: Math.min(position.index + 1, heatList.length - 1) };
+  position = { view: "welcome", index: position.index + 1 };
   update();
 }
 function jumpTo(index) {
   position = { view: "heat", index };
   update();
 }
-// What "Weiter" would show next, or null at the end of the start list.
+// What "Weiter" would show next: after the last heat the welcome screen,
+// after that nothing (null).
 function nextPosition() {
-  if (position.view == "welcome")
+  if (position.view == "heat")
+    return position.index < heatList.length - 1
+      ? { view: "heat", index: position.index + 1 }
+      : { view: "welcome", index: heatList.length };
+  if (position.index < heatList.length)
     return { view: "heat", index: position.index };
-  if (position.index < heatList.length - 1)
-    return { view: "heat", index: position.index + 1 };
   return null;
 }
 
@@ -154,9 +158,10 @@ function update() {
   document.getElementById("back").disabled = atWelcome && position.index == 0;
   document.getElementById("forward").disabled = !nextPosition();
   document.getElementById("welcomeBreak").disabled = atWelcome;
-  let resume = heatList[atWelcome ? position.index : Math.min(position.index + 1, heatList.length - 1)];
-  document.getElementById("welcomeResume").textContent =
-    `danach weiter mit WK ${resume.competitionId} · Lauf ${resume.heatId}`;
+  let resume = heatList[atWelcome ? position.index : position.index + 1];
+  document.getElementById("welcomeResume").textContent = resume
+    ? `danach weiter mit WK ${resume.competitionId} · Lauf ${resume.heatId}`
+    : "Ende der Startliste";
   // mark the shown heat, or the heat that follows the welcome screen
   document.querySelectorAll("#heatList .heat").forEach(button => {
     let index = Number(button.dataset.index);
@@ -177,8 +182,10 @@ function renderPreview(element, pos) {
   }
   if (pos.view == "welcome") {
     element.innerHTML = `<div class="welcomePreview"><img src="img/logo.jpg" alt="">`
-      + `<div class="title"></div><div class="sub">Begrüßung</div></div>`;
+      + `<div class="title"></div><div class="sub"></div></div>`;
     element.querySelector(".title").textContent = data.competition;
+    element.querySelector(".sub").textContent = pos.index < heatList.length
+      ? "Begrüßung" : "Begrüßung · Ende der Startliste";
     return;
   }
   let heat = heatList[pos.index];
