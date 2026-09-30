@@ -70,6 +70,10 @@ function validateData(data) {
         if (seen.has(id))
           throw new Error(`${where}: Athlet "${id}" ist in diesem Lauf mehrfach eingetragen`);
         seen.add(id);
+        let time = competition.heats[heat][lane].time;
+        if (!hasNoTime(time) && !(typeof time == "number" && Number.isFinite(time) && time > 0))
+          throw new Error(`${where}: Meldezeit ${JSON.stringify(time)} ist keine Zahl in Sekunden `
+            + '(z. B. 85.4 für 1:25,40)');
       }
     }
   }
@@ -108,6 +112,21 @@ function birthYear(birthday) {
   let text = String(birthday).trim();
   let match = text.match(/^(\d{4})(-\d{1,2}-\d{1,2})?$/) || text.match(/^\d{1,2}\.\d{1,2}\.(\d{4})$/);
   return match ? match[1] : null;
+}
+// No entry time: missing, null, "" or 0. The display shows a grey dash.
+function hasNoTime(time) {
+  return time === undefined || time === null || time === "" || time === 0;
+}
+// Entry time in seconds as shown on the display: 85.4 -> "1:25,40",
+// 28.5 -> "0:28,50", rounded to hundredths.
+function formatTime(seconds) {
+  // toFixed removes float noise first (1.005 * 100 is 100.49999…)
+  let hundredths = Math.round(Number((seconds * 100).toFixed(6)));
+  let minutes = Math.floor(hundredths / 6000);
+  let rest = hundredths % 6000;
+  let secs = String(Math.floor(rest / 100)).padStart(2, "0");
+  let fraction = String(rest % 100).padStart(2, "0");
+  return `${minutes}:${secs},${fraction}`;
 }
 // The athlete id a lane refers to, or null for an empty lane
 // (lane missing, {} or "athlete": "" / null).
@@ -149,10 +168,8 @@ function swimmersOf(field, athletes) {
     let id = athleteId(field[lane]);
     if (id === null)
       continue;
-    // "" if no entry time is given; the display then shows a grey dash
     let time = field[lane].time;
-    time = time === undefined || time === null ? "" : String(time).trim();
-    swimmers[Number(lane)] = { ...athletes.get(id), time };
+    swimmers[Number(lane)] = { ...athletes.get(id), time: hasNoTime(time) ? "" : formatTime(time) };
   }
   return swimmers;
 }
