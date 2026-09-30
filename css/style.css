@@ -148,6 +148,9 @@ th.name, td.name {
 td.lane {
     font-weight: bold;
 }
+tr.empty td.name {
+    color: #aaa;
+}
 th.lane {
     width: 10%;
 }

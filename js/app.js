@@ -87,6 +87,9 @@ function validateData(data) {
     throw new Error('Eintrag "competition" (Name der Veranstaltung) fehlt');
   if (typeof data.startlist != "object" || data.startlist === null)
     throw new Error('Eintrag "startlist" fehlt');
+  if (!Number.isInteger(data.lanes) || data.lanes < 1)
+    throw new Error('Eintrag "lanes" (Anzahl der Bahnen) fehlt oder ist keine positive Zahl');
+  let [firstLane, lastLane] = laneRange(data.lanes);
   let keys = Object.keys(data.startlist);
   if (keys.length == 0)
     throw new Error("keine Wettkämpfe in der Startliste");
@@ -99,8 +102,9 @@ function validateData(data) {
       throw new Error(`Wettkampf ${key} hat keine Läufe`);
     for (const heat in competition.heats)
       for (const lane in competition.heats[heat])
-        if (!/^\d+$/.test(lane))
-          throw new Error(`Wettkampf ${key}, Lauf ${heat}: "${lane}" ist keine Bahnnummer`);
+        if (!/^\d+$/.test(lane) || Number(lane) < firstLane || Number(lane) > lastLane)
+          throw new Error(`Wettkampf ${key}, Lauf ${heat}: "${lane}" ist keine Bahn `
+            + `(erlaubt: ${firstLane}–${lastLane})`);
   }
 }
 function showUploadError(message) {
@@ -112,33 +116,32 @@ function startCompetition(data) {
   currentCompetition = 0;
   currentHeat = 0;
   showUploadError("");
-  buildLanes();
+  buildLanes(data.lanes);
   document.getElementById("welcomeName").textContent = data.competition;
   document.title = data.competition;
   document.body.classList.add("loaded");
   showWelcome(true);
 }
 
-// The table shows every lane from the lowest to the highest lane number used
-// anywhere in the start list, so the layout stays the same for all heats
-// (e.g. lanes 1-4, 1-8, or 0-9).
-function buildLanes() {
-  let numbers = [];
-  for (const competition of Object.values(json))
-    for (const field of Object.values(competition.heats))
-      numbers.push(...Object.keys(field).map(Number));
-  let first = Math.min(...numbers);
-  let last = Math.max(...numbers);
+// Pools with fewer than 10 lanes number them from 1, larger pools from 0
+// (a 10-lane pool has lanes 0-9).
+function laneRange(lanes) {
+  return lanes < 10 ? [1, lanes] : [0, lanes - 1];
+}
+// One table row per lane of the pool, so the layout is the same for all heats.
+function buildLanes(lanes) {
+  let [first, last] = laneRange(lanes);
   let table = document.getElementById("lanes");
   table.querySelectorAll("tr.laneRow").forEach(row => row.remove());
   for (let lane = first; lane <= last; ++lane) {
     let row = document.createElement("tr");
     row.className = "laneRow";
+    row.id = `lane${lane}`;
     row.innerHTML = `<td class="lane">${lane}</td><td class="name" id="name${lane}"></td>`
       + `<td id="born${lane}"></td><td id="time${lane}"></td>`;
     table.tBodies[0].appendChild(row);
   }
-  table.style.setProperty("--lanes", last - first + 1);
+  table.style.setProperty("--lanes", lanes);
 }
 
 /* ================= WELCOME SCREEN =================  */
@@ -160,9 +163,13 @@ function loadCurrent() {
   document.getElementById("heat").innerHTML = heat;
   document.getElementById("heatCount").innerHTML = heats.length;
   // clear all lanes so empty lanes don't keep the previous heat's swimmers
-  document.querySelectorAll("tr.laneRow td:not(.lane)").forEach(cell => cell.innerHTML = "");
+  // lanes without a swimmer show a greyed out dash
+  document.querySelectorAll("tr.laneRow").forEach(row => row.classList.add("empty"));
+  document.querySelectorAll("tr.laneRow td.name").forEach(cell => cell.innerHTML = "&ndash;");
+  document.querySelectorAll("tr.laneRow td:not(.lane, .name)").forEach(cell => cell.innerHTML = "");
   let field = json[competition]["heats"][heat];
   for (const key in field) {
+    document.getElementById(`lane${Number(key)}`).classList.remove("empty");
     document.getElementById(`name${Number(key)}`).innerHTML = field[key]["name"];
     document.getElementById(`born${Number(key)}`).innerHTML = field[key]["born"];
     document.getElementById(`time${Number(key)}`).innerHTML = field[key]["time"];

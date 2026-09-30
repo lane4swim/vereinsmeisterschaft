@@ -1,6 +1,7 @@
 /* ================= BEGIN DATA SECTION =================  */
 const json = {
   "competition": "Vereinsmeisterschaften 2025",
+  "lanes": 4,
   "startlist": {
     "1": {
       "name": "100 m Brust männlich",
