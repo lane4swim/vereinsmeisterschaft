@@ -304,15 +304,3 @@ kbd {
 #demoBadge[hidden] {
     display: none;
 }
-#dsvOption {
-    font-size: 14pt;
-    color: #444;
-}
-#dsvOption input {
-    width: 3em;
-    font-size: inherit;
-}
-#dsvOption small {
-    display: block;
-    font-size: 11pt;
-}

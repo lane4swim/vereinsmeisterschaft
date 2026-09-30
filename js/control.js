@@ -33,7 +33,6 @@ function init() {
   document.addEventListener("dragover", event => event.preventDefault());
   document.addEventListener("drop", event => event.preventDefault());
 
-  document.getElementById("dsvLanes").value = loadSetting("dsvLanes") ?? 4;
   onClick("loadSample", loadSample);
   onClick("openDisplay", openDisplay);
   onClick("back", retreat);
@@ -82,37 +81,14 @@ function readDataFile(file, input) {
   let reader = new FileReader();
   reader.onload = () => {
     try {
-      let text = decodeText(reader.result);
-      if (isDsvFile(text)) {
-        let data = parseDsv(text, dsvLanes());
-        validateData(data);
-        start(data);
-      } else {
-        start(parseDataFile(text));
-      }
+      start(parseDataFile(reader.result));
     } catch (e) {
       showUploadError(`Die Datei konnte nicht gelesen werden: ${e.message}`);
       input.value = "";
     }
   };
   reader.onerror = () => showUploadError("Die Datei konnte nicht gelesen werden.");
-  reader.readAsArrayBuffer(file);
-}
-// UTF-8, or Windows-1252 for older files (umlauts would break otherwise)
-function decodeText(buffer) {
-  try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(buffer).replace(/^\uFEFF/, "");
-  } catch (e) {
-    return new TextDecoder("windows-1252").decode(buffer);
-  }
-}
-// number of lanes for DSV files, which do not contain it; remembered
-function dsvLanes() {
-  let lanes = Number(document.getElementById("dsvLanes").value);
-  if (!Number.isInteger(lanes) || lanes < 1 || lanes > 10)
-    throw new Error("Bitte eine Anzahl Bahnen zwischen 1 und 10 angeben");
-  saveSetting("dsvLanes", lanes);
-  return lanes;
+  reader.readAsText(file, "utf-8");
 }
 // Demonstration with the sample data in data/sample.json. Browsers only
 // allow reading it when the page comes from a web server, not from a file
