@@ -133,8 +133,9 @@ th.born {
 th.time {
     width: 20%;
 }
-tr.odd {
-    background: #ccc;
+/* horizontal separators below the header row and between the lanes */
+tr:not(:last-child) {
+    border-bottom: calc(0.3 * var(--u)) solid #666;
 }
 #next {
     font-size: calc(4.5 * var(--u));
