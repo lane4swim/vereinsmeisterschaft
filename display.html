@@ -1,0 +1,31 @@
+<html>
+ <head>
+  <meta charset="utf-8">
+  <title>Anzeige</title>
+  <link rel="stylesheet" href="css/display.css">
+  <script src="js/datafile.js"></script>
+  <script src="js/display.js"></script>
+ </head>
+ <body class="waiting" onload="init()">
+  <section id="welcome">
+   <img src="img/logo.jpg" alt="">
+   <h1 id="welcomeName"></h1>
+   <p id="waitingText">Warte auf die Regie &hellip;</p>
+  </section>
+  <header>
+   <h1>Wettkampf <span id="competitionId"></span> &ndash; <span id="competition"></span></h1>
+   <div id="heatBox">Lauf <span id="heat"></span>/<span id="heatCount"></span></div>
+   <img src="img/logo.jpg" alt="">
+  </header>
+  <main>
+   <table id="lanes">
+    <tr>
+     <th class="lane">Bahn</th><th class="name">Name</th><th class="born">Jahrgang</th><th class="time">Meldezeit</th>
+    </tr>
+    <!-- one row per lane, built from the data file -->
+   </table>
+  </main>
+  <footer id="next">Als Nächstes: <span id="nextCompetition"></span></footer>
+  <div id="fullscreenHint">Klicken oder <kbd>F</kbd> drücken für Vollbild</div>
+ </body>
+</html>

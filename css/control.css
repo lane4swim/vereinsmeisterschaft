@@ -1,0 +1,271 @@
+/* Control window (index.html) for the operator's laptop screen. */
+body {
+    margin: 0;
+    font-family: 'Arial';
+    background: #ffffff;
+    color: #000000;
+}
+/* until a data file is uploaded, only the upload field is shown */
+body:not(.loaded) > #control,
+body.loaded > #upload {
+    display: none;
+}
+button {
+    font: inherit;
+    cursor: pointer;
+}
+
+/* ================= UPLOAD SCREEN ================= */
+#upload {
+    padding: 1em;
+    text-align: center;
+    font-size: 20pt;
+}
+#upload h1 {
+    font-size: 24pt;
+}
+#dropZone {
+    display: block;
+    max-width: 30em;
+    margin: 1em auto;
+    padding: 2em 1em;
+    border: 3px dashed #373f94;
+    border-radius: 0.5em;
+    color: #373f94;
+}
+#dropZone.dragover {
+    background: #373f94;
+    color: #ffffff;
+}
+#dropZone span {
+    display: block;
+    margin: 0.5em 0;
+    font-size: 14pt;
+}
+#upload input {
+    font-size: 16pt;
+}
+#uploadError {
+    color: #b00020;
+}
+kbd {
+    padding: 0 0.3em;
+    border: 1px solid #888;
+    border-radius: 0.2em;
+    font-family: inherit;
+}
+
+/* ================= CONTROL PANEL ================= */
+#control {
+    display: grid;
+    grid-template-columns: minmax(16em, 22em) 1fr;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+}
+#control > header {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5em 1em;
+    padding: 0.6em 1em;
+    background: #373f94;
+    color: #ffffff;
+}
+#control > header h1 {
+    flex: 1;
+    margin: 0;
+    font-size: 1.4em;
+}
+#status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
+}
+.pill {
+    padding: 0.2em 0.7em;
+    border-radius: 1em;
+    font-size: 0.9em;
+    background: #e0e0e0;
+    color: #333333;
+}
+.pill.ok {
+    background: #1b7a3a;
+    color: #ffffff;
+}
+.pill.warn {
+    background: #f2b705;
+    color: #000000;
+}
+.pill.bad {
+    background: #b00020;
+    color: #ffffff;
+}
+#openDisplay {
+    padding: 0.4em 1em;
+    border: 2px solid #ffffff;
+    border-radius: 0.3em;
+    background: transparent;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+/* list of all heats */
+#heatList {
+    overflow-y: auto;
+    padding: 0.5em;
+    border-right: 1px solid #ccc;
+    background: #f4f4f8;
+}
+.competition {
+    margin-bottom: 0.8em;
+}
+.competition .title {
+    display: block;
+    width: 100%;
+    padding: 0.2em 0.3em;
+    border: none;
+    background: none;
+    text-align: left;
+    font-weight: bold;
+}
+.competition .heat {
+    margin: 0.15em;
+    padding: 0.25em 0.6em;
+    border: 1px solid #888;
+    border-radius: 0.3em;
+    background: #ffffff;
+}
+.competition .title:hover,
+.competition .heat:hover {
+    background: #dde0f5;
+}
+.competition .heat.current {
+    border-color: #373f94;
+    background: #373f94;
+    color: #ffffff;
+}
+.competition .heat.resume {
+    border: 2px dashed #373f94;
+    font-weight: bold;
+}
+
+/* what is shown now and what comes next */
+#control > main {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    min-height: 0;
+    padding: 1em;
+    overflow-y: auto;
+}
+#panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1em;
+}
+.panel {
+    min-width: 0;
+    padding: 0.8em;
+    border: 1px solid #ccc;
+    border-radius: 0.4em;
+}
+#nowPanel {
+    border: 3px solid #373f94;
+}
+.panel h2 {
+    margin: 0 0 0.5em;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    color: #555;
+}
+.panel h2 small {
+    text-transform: none;
+}
+.preview .title {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+.preview .sub {
+    margin-bottom: 0.4em;
+    color: #444;
+}
+.preview table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+.preview td {
+    padding: 0.25em 0.4em;
+    border-top: 1px solid #ddd;
+}
+.preview td:first-child {
+    width: 2em;
+    font-weight: bold;
+    text-align: center;
+}
+.preview tr.empty td:nth-child(2) {
+    color: #aaa;
+}
+.welcomePreview {
+    text-align: center;
+}
+.welcomePreview img {
+    height: 8em;
+}
+.preview .end {
+    color: #555;
+    font-style: italic;
+}
+
+/* navigation buttons */
+#buttons {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr 1fr;
+    gap: 1em;
+}
+#buttons button {
+    padding: 0.8em;
+    border: 2px solid #373f94;
+    border-radius: 0.4em;
+    background: #ffffff;
+    color: #373f94;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+#buttons #forward {
+    background: #373f94;
+    color: #ffffff;
+}
+#buttons button small {
+    display: block;
+    font-size: 0.7em;
+    font-weight: normal;
+}
+#buttons button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+#keyHelp {
+    margin: 0;
+    color: #444;
+}
+kbd {
+    padding: 0 0.3em;
+    border: 1px solid #888;
+    border-radius: 0.2em;
+    font-family: inherit;
+}
+#notice {
+    position: fixed;
+    left: 50%;
+    bottom: 1em;
+    transform: translateX(-50%);
+    padding: 0.6em 1.2em;
+    border-radius: 0.3em;
+    background: #b00020;
+    color: #ffffff;
+}
+#notice[hidden] {
+    display: none;
+}

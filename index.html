@@ -1,42 +1,56 @@
 <html>
  <head>
   <meta charset="utf-8">
-  <title>Vereinsmeisterschaften 2025</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script src="js/app.js"></script>
+  <title>Regie – Vereinsmeisterschaften</title>
+  <link rel="stylesheet" href="css/control.css">
+  <script src="js/datafile.js"></script>
+  <script src="js/control.js"></script>
  </head>
  <body onload="init()">
   <section id="upload">
-   <h1>Vereinsmeisterschaften 2025</h1>
+   <h1>Vereinsmeisterschaften &ndash; Regie</h1>
    <label for="dataFile" id="dropZone">
     Datendatei hierher ziehen
     <span>oder</span>
     <input type="file" id="dataFile" accept=".js,.json,.txt">
    </label>
    <p id="uploadError"></p>
-   <p id="keyHelp">
-    Steuerung: <kbd>→</kbd> / <kbd>Leertaste</kbd> nächster Lauf &middot;
-    <kbd>←</kbd> vorheriger Lauf / Begrüßung &middot; <kbd>F</kbd> Vollbild
-   </p>
   </section>
-  <section id="welcome">
-   <img src="img/logo.jpg" alt="">
-   <h1 id="welcomeName"></h1>
+
+  <section id="control">
+   <header>
+    <h1 id="eventName"></h1>
+    <div id="status">
+     <span id="stDisplay" class="pill"></span>
+     <span id="stFullscreen" class="pill"></span>
+     <span id="stWakeLock" class="pill"></span>
+    </div>
+    <button id="openDisplay">Anzeige öffnen</button>
+   </header>
+   <nav id="heatList" aria-label="Alle Läufe"></nav>
+   <main>
+    <div id="panels">
+     <section class="panel" id="nowPanel">
+      <h2>Jetzt auf der Anzeige</h2>
+      <div id="nowView" class="preview"></div>
+     </section>
+     <section class="panel" id="nextPanel">
+      <h2>Als Nächstes <small>(Weiter)</small></h2>
+      <div id="nextView" class="preview"></div>
+     </section>
+    </div>
+    <div id="buttons">
+     <button id="back">&#9664; Zurück</button>
+     <button id="welcomeBreak">Begrüßung zeigen<small id="welcomeResume"></small></button>
+     <button id="forward">Weiter &#9654;</button>
+    </div>
+    <p id="keyHelp">
+     <kbd>→</kbd> / <kbd>Leertaste</kbd> weiter &middot; <kbd>←</kbd> zurück &middot;
+     <kbd>B</kbd> Begrüßung, danach nächster Lauf &middot;
+     Vollbild: auf der Anzeige klicken oder <kbd>F</kbd>
+    </p>
+   </main>
   </section>
-  <header>
-   <h1>Wettkampf <span id="competitionId"></span> &ndash; <span id="competition"></span></h1>
-   <div id="heatBox">Lauf <span id="heat"></span>/<span id="heatCount"></span></div>
-   <img src="img/logo.jpg" alt="">
-  </header>
-  <main>
-   <table id="lanes">
-    <tr>
-     <th class="lane">Bahn</th><th class="name">Name</th><th class="born">Jahrgang</th><th class="time">Meldezeit</th>
-    </tr>
-    <!-- one row per lane, built from the data file -->
-   </table>
-  </main>
-  <footer id="next">Als Nächstes: <span id="nextCompetition"></span></footer>
   <div id="notice" hidden></div>
  </body>
 </html>
