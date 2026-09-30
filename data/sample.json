@@ -2,10 +2,10 @@
   "competition" : "Vereinsmeisterschaften 2026",
   "lanes" : 4,
   "athletes": [
-    { "id" : "1", "name": "Name_1", "birthday" : "1970-05-12", "club" : "WSV Schermbeck" },
-    { "id" : "2", "name": "Name_2", "birthday" : "1971", "club": "WSV Schermbeck" },
-    { "id" : "3", "name": "Name_2", "birthday" : "1971", "club": "WSV Schermbeck" },
-    { "id" : "4", "name": "Name_2", "birthday" : "1971", "club": "WSV Schermbeck" }
+    { "id" : "1", "lastName": "Nachname_1", "firstName": "Vorname_1", "birthday" : "1970-05-12", "club" : "WSV Schermbeck" },
+    { "id" : "2", "lastName": "Nachname_2", "firstName": "Vorname_2", "birthday" : "1971", "club": "WSV Schermbeck" },
+    { "id" : "3", "lastName": "Nachname_3", "firstName": "Vorname_3", "birthday" : "1971", "club": "WSV Schermbeck" },
+    { "id" : "4", "lastName": "Nachname_4", "firstName": "Vorname_4", "birthday" : "1971", "club": "WSV Schermbeck" }
   ],
   "startlist": {
     "1": {

@@ -39,10 +39,13 @@ function parseCsvStartlist(text, eventName) {
       throw new Error(`${where}: Meldezeit "${row.Meldezeit}" nicht erkannt (erwartet mm:ss,hh)`);
 
     // relays have no person name; then the club stands in the lane
-    let name = `${row.Vorname} ${row.Nachname}`.trim() || row.Verein;
-    let id = row.InternePersonenId || `${name}|${row.Jahrgang}|${row.Verein}`;
+    let person = row.Nachname != ""
+      ? { lastName: row.Nachname, firstName: row.Vorname }
+      : { name: row.Verein };
+    let id = row.InternePersonenId
+      || `${row.Nachname}|${row.Vorname}|${row.Jahrgang}|${row.Verein}`;
     if (!athletes.has(id))
-      athletes.set(id, { id, name, birthday: row.Jahrgang, club: row.Verein });
+      athletes.set(id, { id, ...person, birthday: row.Jahrgang, club: row.Verein });
 
     let competition = startlist[row.Wk] ??= { name: competitionTitle(row), heats: {} };
     let heat = competition.heats[Number(row.Lauf)] ??= {};

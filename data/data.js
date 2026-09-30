@@ -3,10 +3,11 @@ const json = {
   "competition": "Vereinsmeisterschaften 2025",
   "lanes": 4,
   /* entry times ("time" in the heats) are given in seconds, e.g. 85.4 = 1:25,40 */
-  /* every athlete once, with a unique id; the heats refer to this id */
+  /* every athlete once, with a unique id; the heats refer to this id.
+     The display shows "lastName, firstName". */
   "athletes": [
-    { "id": "1", "name": "Max Mustermann", "birthday": "1970-05-12", "club": "WSV Schermbeck" },
-    { "id": "2", "name": "Erika Musterfrau", "birthday": "1985", "club": "WSV Schermbeck" }
+    { "id": "1", "lastName": "Mustermann", "firstName": "Max", "birthday": "1970-05-12", "club": "WSV Schermbeck" },
+    { "id": "2", "lastName": "Musterfrau", "firstName": "Erika", "birthday": "1985", "club": "WSV Schermbeck" }
   ],
   "startlist": {
     "1": {

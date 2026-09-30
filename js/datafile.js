@@ -5,7 +5,7 @@
 // Program version, shared by both windows. Change it with every update of
 // the program: a display window that was opened with an older version then
 // notices the difference and reloads itself (see display.js).
-const APP_VERSION = "2026-10-01.5";
+const APP_VERSION = "2026-10-01.6";
 
 // Accepts the format of data/data.js (`const json = {...};` with comments
 // and trailing commas) as well as plain JSON. The file is parsed, not executed.
@@ -91,8 +91,11 @@ function validateData(data) {
     }
   }
 }
-// The athletes by id. Every athlete needs a unique id and a name; the
-// birthday may be a full date ("1970-05-12" or "12.05.1970") or just the year.
+// The athletes by id. Every athlete needs a unique id and a last name
+// ("lastName", usually with "firstName"); the display shows "Nachname,
+// Vorname". Entries that are not a person (e.g. a relay team) may give a
+// "name" instead, which is shown as it is. The birthday may be a full date
+// ("1970-05-12" or "12.05.1970") or just the year.
 function athleteMap(list) {
   if (!Array.isArray(list))
     throw new Error('Eintrag "athletes" (Liste der Athleten) fehlt');
@@ -104,19 +107,28 @@ function athleteMap(list) {
     id = String(id).trim();
     if (athletes.has(id))
       throw new Error(`Die id "${id}" ist in "athletes" mehrfach vergeben`);
-    if (typeof athlete.name != "string" || athlete.name.trim() == "")
-      throw new Error(`Athlet "${id}" hat keinen Namen`);
+    let name = displayName(athlete);
+    if (name == "")
+      throw new Error(`Athlet "${id}" hat keinen Namen ("lastName" und "firstName")`);
     let year = birthYear(athlete.birthday);
     if (year === null)
       throw new Error(`Athlet "${id}": Geburtsdatum "${athlete.birthday}" nicht erkannt `
         + '(erwartet z. B. "1970-05-12", "12.05.1970" oder "1970")');
     athletes.set(id, {
-      name: athlete.name,
+      name,
       born: year,
       club: typeof athlete.club == "string" ? athlete.club : "",
     });
   });
   return athletes;
+}
+// "Mustermann, Max" from lastName and firstName, or "name" as it is
+function displayName(athlete) {
+  let text = value => typeof value == "string" ? value.trim() : "";
+  let [last, first] = [text(athlete.lastName), text(athlete.firstName)];
+  if (last != "")
+    return first != "" ? `${last}, ${first}` : last;
+  return text(athlete.name);
 }
 // The year of birth ("Jahrgang") shown on the display; "" if not given.
 function birthYear(birthday) {
