@@ -56,14 +56,24 @@ kbd {
 }
 
 /* ================= CONTROL PANEL ================= */
+/* The control panel is exactly as high as the window; only the heat list
+   and the main area scroll inside it, so the header always stays visible. */
+body.loaded {
+    height: 100vh;
+    overflow: hidden;
+}
 #control {
     display: grid;
     grid-template-columns: minmax(16em, 22em) 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
     height: 100vh;
+    overflow: hidden;
 }
 #control > header {
     grid-column: 1 / -1;
+    position: sticky;
+    top: 0;
+    z-index: 1;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -120,6 +130,7 @@ kbd {
 
 /* list of all heats */
 #heatList {
+    min-height: 0;
     overflow-y: auto;
     padding: 0.5em;
     border-right: 1px solid #ccc;

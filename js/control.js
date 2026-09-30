@@ -259,8 +259,20 @@ function update() {
     button.classList.toggle("current", !atWelcome && index == position.index);
     button.classList.toggle("resume", atWelcome && index == position.index);
   });
-  document.querySelector("#heatList .current, #heatList .resume")
-    ?.scrollIntoView({ block: "nearest" });
+  scrollHeatList(document.querySelector("#heatList .current, #heatList .resume"));
+}
+// Scroll only the heat list (not the page, which scrollIntoView would also
+// do) so that the marked heat is visible.
+function scrollHeatList(button) {
+  if (!button)
+    return;
+  let list = document.getElementById("heatList");
+  let top = button.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop;
+  let margin = 40;
+  if (top - margin < list.scrollTop)
+    list.scrollTop = top - margin;
+  else if (top + button.offsetHeight + margin > list.scrollTop + list.clientHeight)
+    list.scrollTop = top + button.offsetHeight + margin - list.clientHeight;
 }
 function heatTitle(heat) {
   return `Wettkampf ${heat.competitionId} – ${heat.competitionName}`;
