@@ -169,10 +169,15 @@ function loadCurrent() {
   document.querySelectorAll("tr.laneRow td:not(.lane, .name)").forEach(cell => cell.innerHTML = "");
   let field = json[competition]["heats"][heat];
   for (const key in field) {
-    document.getElementById(`lane${Number(key)}`).classList.remove("empty");
-    document.getElementById(`name${Number(key)}`).innerHTML = field[key]["name"];
-    document.getElementById(`born${Number(key)}`).innerHTML = field[key]["born"];
-    document.getElementById(`time${Number(key)}`).innerHTML = field[key]["time"];
+    let swimmer = field[key];
+    // a lane listed without a swimmer name (e.g. {} or "name": "") is empty too
+    if (typeof swimmer?.name != "string" || swimmer.name.trim() == "")
+      continue;
+    let lane = Number(key);
+    document.getElementById(`lane${lane}`).classList.remove("empty");
+    document.getElementById(`name${lane}`).innerHTML = swimmer.name;
+    document.getElementById(`born${lane}`).innerHTML = swimmer.born ?? "";
+    document.getElementById(`time${lane}`).innerHTML = swimmer.time ?? "";
   }
   updateNext();
   fitAllText();
