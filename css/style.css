@@ -132,7 +132,8 @@ th {
     padding-bottom: calc(1 * var(--u));
 }
 td {
-    font-size: calc(7 * var(--u));
+    /* as large as possible while all lanes still fit on the screen */
+    font-size: min(calc(7 * var(--u)), calc(40 * var(--u) / var(--lanes, 4)));
     padding: 0 calc(2 * var(--u));
     white-space: nowrap;
     overflow: hidden;

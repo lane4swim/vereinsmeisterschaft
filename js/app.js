@@ -97,6 +97,10 @@ function validateData(data) {
     if (typeof competition.heats != "object" || competition.heats === null
         || Object.keys(competition.heats).length == 0)
       throw new Error(`Wettkampf ${key} hat keine Läufe`);
+    for (const heat in competition.heats)
+      for (const lane in competition.heats[heat])
+        if (!/^\d+$/.test(lane))
+          throw new Error(`Wettkampf ${key}, Lauf ${heat}: "${lane}" ist keine Bahnnummer`);
   }
 }
 function showUploadError(message) {
@@ -108,10 +112,33 @@ function startCompetition(data) {
   currentCompetition = 0;
   currentHeat = 0;
   showUploadError("");
+  buildLanes();
   document.getElementById("welcomeName").textContent = data.competition;
   document.title = data.competition;
   document.body.classList.add("loaded");
   showWelcome(true);
+}
+
+// The table shows every lane from the lowest to the highest lane number used
+// anywhere in the start list, so the layout stays the same for all heats
+// (e.g. lanes 1-4, 1-8, or 0-9).
+function buildLanes() {
+  let numbers = [];
+  for (const competition of Object.values(json))
+    for (const field of Object.values(competition.heats))
+      numbers.push(...Object.keys(field).map(Number));
+  let first = Math.min(...numbers);
+  let last = Math.max(...numbers);
+  let table = document.getElementById("lanes");
+  table.querySelectorAll("tr.laneRow").forEach(row => row.remove());
+  for (let lane = first; lane <= last; ++lane) {
+    let row = document.createElement("tr");
+    row.className = "laneRow";
+    row.innerHTML = `<td class="lane">${lane}</td><td class="name" id="name${lane}"></td>`
+      + `<td id="born${lane}"></td><td id="time${lane}"></td>`;
+    table.tBodies[0].appendChild(row);
+  }
+  table.style.setProperty("--lanes", last - first + 1);
 }
 
 /* ================= WELCOME SCREEN =================  */
@@ -133,18 +160,12 @@ function loadCurrent() {
   document.getElementById("heat").innerHTML = heat;
   document.getElementById("heatCount").innerHTML = heats.length;
   // clear all lanes so empty lanes don't keep the previous heat's swimmers
-  for (let lane = 1; document.getElementById(`name${lane}`); ++lane) {
-    document.getElementById(`name${lane}`).innerHTML = "";
-    document.getElementById(`born${lane}`).innerHTML = "";
-    document.getElementById(`time${lane}`).innerHTML = "";
-  }
+  document.querySelectorAll("tr.laneRow td:not(.lane)").forEach(cell => cell.innerHTML = "");
   let field = json[competition]["heats"][heat];
   for (const key in field) {
-    if (!document.getElementById(`name${key}`))
-      continue; // lane not shown in the table
-    document.getElementById(`name${key}`).innerHTML = field[key]["name"];
-    document.getElementById(`born${key}`).innerHTML = field[key]["born"];
-    document.getElementById(`time${key}`).innerHTML = field[key]["time"];
+    document.getElementById(`name${Number(key)}`).innerHTML = field[key]["name"];
+    document.getElementById(`born${Number(key)}`).innerHTML = field[key]["born"];
+    document.getElementById(`time${Number(key)}`).innerHTML = field[key]["time"];
   }
   updateNext();
   fitAllText();
