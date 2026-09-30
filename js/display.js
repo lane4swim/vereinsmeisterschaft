@@ -73,7 +73,7 @@ function show(state) {
   document.getElementById("welcomeName").textContent = state.event;
   if (state.lanes != lanes)
     buildLanes(state.lanes);
-  document.getElementById("lanes").classList.toggle("withClub", !!state.showClub);
+  document.querySelector("main").classList.toggle("withClub", !!state.showClub);
   document.body.className = state.view;
   if (state.view == "heat")
     showHeat(state.heat, state.next);
@@ -95,7 +95,7 @@ function buildLanes(count) {
       + `<td id="born${lane}"></td><td id="time${lane}"></td>`;
     table.tBodies[0].appendChild(row);
   }
-  table.style.setProperty("--lanes", count);
+  document.querySelector("main").style.setProperty("--lanes", count);
 }
 function showHeat(heat, next) {
   document.getElementById("competition").textContent = heat.competitionName;

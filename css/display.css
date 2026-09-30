@@ -83,14 +83,31 @@ header h1 {
 header img {
     height: calc(12 * var(--u));
 }
+/* The lane table is laid out as a grid on <main>, not by the browser's
+   table layout: browsers disagree about what "height: 100%" of a table
+   means here, and Safari pushed the last lane off the screen. The grid
+   gives every lane an equal share of the height left under the header row. */
 main {
     min-height: 0;
+    display: grid;
+    grid-template-columns: 10% 54% 16% 20%;
+    grid-template-rows: auto repeat(var(--lanes, 4), minmax(0, 1fr));
 }
-table {
-    width: 100%;
-    height: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
+main.withClub {
+    grid-template-columns: 8% 40% 24% 12% 16%;
+}
+#lanes,
+#lanes tbody,
+#lanes tr {
+    display: contents;
+}
+th, td {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    overflow: hidden;
+    text-align: center;
 }
 th {
     font-size: calc(3.5 * var(--u));
@@ -102,13 +119,11 @@ td {
     font-size: min(calc(7 * var(--u)), calc(40 * var(--u) / var(--lanes, 4)));
     padding: 0 calc(2 * var(--u));
     white-space: nowrap;
-    overflow: hidden;
     font-variant-numeric: tabular-nums;
 }
-th, td {
-    text-align: center;
-}
-th.name, td.name {
+th.name, td.name,
+th.club, td.club {
+    justify-content: flex-start;
     text-align: left;
 }
 td.lane {
@@ -118,39 +133,9 @@ tr.empty td.name,
 td.missing {
     color: #aaa;
 }
-th.lane {
-    width: 10%;
-}
-th.name {
-    width: 54%;
-}
-th.born {
-    width: 16%;
-}
-th.time {
-    width: 20%;
-}
 /* the club column is switched on in the control window */
-table:not(.withClub) .club {
+main:not(.withClub) .club {
     display: none;
-}
-table.withClub th.lane {
-    width: 8%;
-}
-table.withClub th.name {
-    width: 40%;
-}
-table.withClub th.club {
-    width: 24%;
-}
-table.withClub th.born {
-    width: 12%;
-}
-table.withClub th.time {
-    width: 16%;
-}
-th.club, td.club {
-    text-align: left;
 }
 /* the club is secondary, so it starts a bit smaller than the name */
 td.club {
@@ -162,7 +147,7 @@ td.twoLines {
     line-height: 1.1;
 }
 /* horizontal separators below the header row and between the lanes */
-tr:not(:last-child) {
+tr:not(:last-child) > * {
     border-bottom: calc(0.3 * var(--u)) solid #666;
 }
 #next {
