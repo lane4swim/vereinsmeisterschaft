@@ -1,165 +1,10 @@
 <html>
- <script>
-/* ================= BEGIN DATA SECTION =================  */
-  const json = {
-    "1": {
-      "name": "100 m Brust männlich",
-      "heats": {
-        "1": {
-          "1": { "name": "Name", "born": "jahrgang", "time": "meldezeit"},
-        }
-      }
-    }
-  };
-/* ================= END DATA SECTION =================  */
-
-  let competitions = Object.keys(json);
-  let heats = Object.keys(json["1"]["heats"]);
-  let oldCompetition = 0;
-  let currentCompetition = 0;
-  let currentHeat = 0;
-  function init() {
-    loadCompetitions();
-    updateCompetitions();
-    loadCurrent();
-  }
-
-  function loadCompetitions() {
-    let list = document.getElementById("list");
-    list.innerHTML = "";
-    let i = 0;
-    for (const key of competitions.slice(0, 6)) {
-      let name = json[key]["name"];
-      let li = document.createElement("li");
-      li.innerHTML = `Wettkampf ${key} - ${name}`;
-      li.id = `competition${i}`;
-      i ++;
-      list.appendChild(li);
-    }
-    document.getElementById("competition0").classList.add("selected");
-  }
-  function updateCompetitions() {
-    for (let i = 0; i < 6; ++i) {
-      if (currentCompetition + i >= competitions.length) {
-        document.getElementById(`competition${i}`).innerHTML = "";
-      } else {
-        let key = competitions[i + currentCompetition];
-        let name = json[key]["name"];
-        document.getElementById(`competition${i}`).innerHTML = `Wettkampf ${key} - ${name}`;
-      }
-    }
-
-  }
-  function loadCurrent() {
-    let competition = competitions[currentCompetition];
-    heats = Object.keys(json[competition]["heats"]);
-    let heat = heats[currentHeat];
-    document.getElementById("competition").innerHTML = json[competition]["name"];
-    document.getElementById("competitionId").innerHTML = competition;
-    document.getElementById("heat").innerHTML = heat;
-    let field = json[competition]["heats"][heat];
-    for (const key in field) {
-      document.getElementById(`name${key}`).innerHTML = field[key]["name"];
-      document.getElementById(`born${key}`).innerHTML = field[key]["born"];
-      document.getElementById(`time${key}`).innerHTML = field[key]["time"];
-    }
-  }
-  function advance() {
-    if (currentHeat == heats.length - 1) {
-      if (currentCompetition == competitions.length - 1) {
-        return; // Alternativ: Wettkampf beendet
-      }
-      // advance competition
-      currentCompetition++;
-      currentHeat = 0;
-      updateCompetitions();
-    }
-    else
-      currentHeat++;
-    loadCurrent();
-  }
-  function retreat() {
-    if (currentHeat == 0) {
-      if (currentCompetition == 0)
-        return;
-      currentCompetition--;
-      let competition = competitions[currentCompetition];
-      heats = Object.keys(json[competition]["heats"]);
-      currentHeat = heats.length - 1;
-      updateCompetitions();
-    }
-    else
-      currentHeat--;
-    loadCurrent();
-  }
- </script>
- <style>
-body {
-    display: grid;
-    gap: 2em;
-    font-family: 'Arial';
-}
-
-@media (min-width:45em) {
-    body {
-        grid-template-columns: 2fr 5fr 1fr;
-        grid-template-rows: auto 1fr min-content;
-    }
-}
-header,footer {
-    grid-column: 1 / -1;
-}
-footer {
-    grid-template-columns: 1fr 1fr;
-}
-h1 {
-    text-align: center;
-    font-size: 24pt;
-}
-table {
-    width: 100%;
-    border-collapse: true;
-    font-size: 20pt;
-    table-layout: fixed;
-}
-th, td {
-    text-align: center;
-    padding: 0.5em;
-}
-td.name {
-    text-align: left;
-}
-ul {
-    list-style: none;
-    margin: 0pt;
-    padding: 0pt;
-    font-size: 14pt;
-}
-ul li {
-    margin-bottom: 0.2em;
-}
-ul li.selected {
-    background: #373f94;
-//    background: #10abdb;
-    color: #ffffff;
-}
-footer div {
-    float: left;
-    width: 50%;
-    text-align: center;
-    font-size: 24pt;
-    color: #444;
-}
-footer div a {
-    text-decoration: none;
-    color: #444;
-}
-tr.odd {
-    background: #ccc;
-}
- </style>
  <head>
+  <meta charset="utf-8">
   <title>Vereinsmeisterschaften 2025</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
  </head>
  <body onload="init()">
   <header>
@@ -175,27 +20,27 @@ tr.odd {
   <main>
    <table>
     <tr>
-     <th style="width: 10%;">Bahn</th><th style="width: 50%;">Name</th><th style="width: 20%;">Jahrgang</th><th style="width: 20%;">Meldezeit</th>
+     <th class="lane">Bahn</th><th class="name">Name</th><th class="born">Jahrgang</th><th class="time">Meldezeit</th>
     </tr>
     <tr class="odd">
-     <td>1</td><td class="name"id="name1">Max Mustermann</td><td id="born1">1970</td><td id="time1">0:59:99</td>
+     <td>1</td><td class="name" id="name1">Max Mustermann</td><td id="born1">1970</td><td id="time1">0:59:99</td>
     </tr>
     <tr>
-     <td>2</td><td class="name"id="name2">Moritz Mustermann</td><td id="born2">1970</td><td id="time2">0:45:99</td>
+     <td>2</td><td class="name" id="name2">Moritz Mustermann</td><td id="born2">1970</td><td id="time2">0:45:99</td>
     </tr>
     <tr class="odd">
-     <td>3</td><td class="name"id="name3">Moritz Mustermann</td><td id="born3">1970</td><td id="time3">0:45:99</td>
+     <td>3</td><td class="name" id="name3">Moritz Mustermann</td><td id="born3">1970</td><td id="time3">0:45:99</td>
     </tr>
     <tr>
-     <td>4</td><td class="name"id="name4">Moritz Mustermann</td><td id="born4">1970</td><td id="time4">0:45:99</td>
+     <td>4</td><td class="name" id="name4">Moritz Mustermann</td><td id="born4">1970</td><td id="time4">0:45:99</td>
     </tr>
    </table>
   </main>
   <aside>
-   <img src="img/logo.jpg"width="100%"/>
+   <img src="img/logo.jpg" width="100%"/>
   </aside>
   <footer>
-   <div><a href="javascript:retreat()";>&lt;</a></div>
+   <div><a href="javascript:retreat();">&lt;</a></div>
    <div><a href="javascript:advance();">&gt;</a></div>
   </footer>
  </body>
