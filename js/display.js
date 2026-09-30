@@ -34,6 +34,7 @@ function sendStatus(error) {
   send({
     type: "status",
     first: !reported, // freshly (re)loaded: the control window sends what to show
+    version: APP_VERSION,
     fullscreen: !!document.fullscreenElement,
     wakeLock: wakeLock ? "active" : wakeLockProblem ?? "off",
     error,
@@ -44,7 +45,26 @@ function receive(event) {
   let message = event.data;
   if (event.source !== control || message?.app != "vm" || message.type != "state")
     return;
+  if (message.version != APP_VERSION && reloadForUpdate(message.version))
+    return;
   show(message);
+}
+// This window stays open while the control window is reloaded, e.g. after
+// a program update, and would keep running the old program. It reloads
+// itself once to pick up the version of the control window. If that does
+// not help (e.g. old files from the browser cache), it keeps running and
+// the control window shows a warning.
+function reloadForUpdate(version) {
+  let key = "vm-reloaded-for-version";
+  try {
+    if (sessionStorage.getItem(key) == version)
+      return false;
+    sessionStorage.setItem(key, version);
+  } catch (e) {
+    return false; // without storage a reload could repeat endlessly
+  }
+  location.reload();
+  return true;
 }
 
 /* ================= RENDERING =================  */

@@ -301,6 +301,7 @@ function sendState() {
   displayWindow.postMessage({
     app: "vm",
     type: "state",
+    version: APP_VERSION,
     event: data.competition,
     lanes: data.lanes,
     showClub,
@@ -334,7 +335,9 @@ function updateStatus() {
   let open = displayWindow && !displayWindow.closed;
   let connected = open && Date.now() - lastSeen < 3000;
   setPill("stDisplay", !open ? ["off", "Anzeige: nicht geöffnet"]
-    : connected ? ["ok", "Anzeige: verbunden"] : ["bad", "Anzeige: keine Verbindung"]);
+    : !connected ? ["bad", "Anzeige: keine Verbindung"]
+    : displayStatus.version != APP_VERSION ? ["bad", "Anzeige: alte Programmversion – bitte neu laden"]
+    : ["ok", "Anzeige: verbunden"]);
   setPill("stFullscreen", !connected ? ["off", "Vollbild: –"]
     : displayStatus.fullscreen ? ["ok", "Vollbild: an"]
     : ["warn", "Vollbild: aus – auf der Anzeige klicken oder F"]);
