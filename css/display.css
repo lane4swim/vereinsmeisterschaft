@@ -27,6 +27,35 @@ body:not(.heat) {
 #welcome img {
     height: calc(55 * var(--u));
 }
+/* hint for the next heat on a welcome screen during the event */
+#welcomeNext {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(1 * var(--u));
+    max-width: 100%;
+    margin: 0;
+}
+#welcomeNext[hidden] {
+    display: none;
+}
+#welcomeNext span {
+    font-size: calc(3.5 * var(--u));
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+#welcomeNextHeat {
+    max-width: 100%;
+    font-size: calc(5.5 * var(--u));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* smaller logo so that the hint fits below the event name */
+#welcome:has(#welcomeNext:not([hidden])) img {
+    height: calc(42 * var(--u));
+}
 #waitingText {
     margin: 0;
     font-size: calc(3 * var(--u));

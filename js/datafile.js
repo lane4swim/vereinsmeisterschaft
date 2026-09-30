@@ -5,7 +5,7 @@
 // Program version, shared by both windows. Change it with every update of
 // the program: a display window that was opened with an older version then
 // notices the difference and reloads itself (see display.js).
-const APP_VERSION = "2026-10-01.4";
+const APP_VERSION = "2026-10-01.5";
 
 // Accepts the format of data/data.js (`const json = {...};` with comments
 // and trailing commas) as well as plain JSON. The file is parsed, not executed.

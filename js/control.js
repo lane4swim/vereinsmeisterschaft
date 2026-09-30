@@ -287,8 +287,10 @@ function renderPreview(element, pos) {
     element.innerHTML = `<div class="welcomePreview"><img src="img/logo.jpg" alt="">`
       + `<div class="title"></div><div class="sub"></div></div>`;
     element.querySelector(".title").textContent = data.competition;
-    element.querySelector(".sub").textContent = pos.index < heatList.length
-      ? "Begrüßung" : "Begrüßung · Ende der Startliste";
+    element.querySelector(".sub").textContent = pos.index >= heatList.length
+      ? "Begrüßung · Ende der Startliste"
+      : pos.index > 0 ? `Begrüßung · mit Hinweis auf WK ${heatList[pos.index].competitionId}, `
+        + `Lauf ${heatList[pos.index].heatId}` : "Begrüßung";
     return;
   }
   let heat = heatList[pos.index];
@@ -378,6 +380,15 @@ async function openDisplay() {
       + "Bitte Pop-ups für diese Seite erlauben und erneut klicken.");
   updateStatus();
 }
+// On a welcome screen in the middle of the event (a break), the heat that
+// follows, e.g. "Wettkampf 11 – 50m Freistil männlich · Lauf 1"; nothing
+// before the first and after the last heat.
+function upcomingHint() {
+  if (position.view != "welcome" || position.index == 0 || position.index >= heatList.length)
+    return null;
+  let heat = heatList[position.index];
+  return `${heatTitle(heat)} · Lauf ${heat.heatId}`;
+}
 function sendState() {
   if (!data || !displayWindow || displayWindow.closed)
     return;
@@ -392,6 +403,7 @@ function sendState() {
   displayWindow.postMessage({
     app: "vm",
     type: "state",
+    upcoming: upcomingHint(),
     version: APP_VERSION,
     event: data.competition,
     lanes: data.lanes,

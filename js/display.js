@@ -75,6 +75,8 @@ function show(state) {
     buildLanes(state.lanes);
   document.querySelector("main").classList.toggle("withClub", !!state.showClub);
   document.body.className = state.view;
+  document.getElementById("welcomeNext").hidden = !state.upcoming;
+  document.getElementById("welcomeNextHeat").textContent = state.upcoming ?? "";
   if (state.view == "heat")
     showHeat(state.heat, state.next);
   fitAllText();
@@ -149,7 +151,7 @@ function shrink(element, size, min, tooBig) {
   return size;
 }
 function fitAllText() {
-  document.querySelectorAll("header h1, td, #next, #welcomeName").forEach(fitText);
+  document.querySelectorAll("header h1, td, #next, #welcomeName, #welcomeNextHeat").forEach(fitText);
 }
 
 /* ================= KEYS =================  */
