@@ -1,84 +1,22 @@
 body {
-    display: grid;
-    gap: 2em;
+    margin: 0;
     font-family: 'Arial';
 }
 
-@media (min-width:45em) {
-    body {
-        grid-template-columns: 2fr 5fr 1fr;
-        grid-template-rows: auto 1fr min-content;
-    }
-}
-header,footer {
-    grid-column: 1 / -1;
-}
-footer {
-    grid-template-columns: 1fr 1fr;
-}
-h1 {
-    text-align: center;
-    font-size: 24pt;
-}
-table {
-    width: 100%;
-    border-collapse: true;
-    font-size: 20pt;
-    table-layout: fixed;
-}
-th, td {
-    text-align: center;
-    padding: 0.5em;
-}
-td.name {
-    text-align: left;
-}
-ul {
-    list-style: none;
-    margin: 0pt;
-    padding: 0pt;
-    font-size: 14pt;
-}
-ul li {
-    margin-bottom: 0.2em;
-}
-ul li.selected {
-    background: #373f94;
-    /* background: #10abdb; */
-    color: #ffffff;
-}
-footer div {
-    float: left;
-    width: 50%;
-    text-align: center;
-    font-size: 24pt;
-    color: #444;
-}
-footer div a {
-    text-decoration: none;
-    color: #444;
-}
-tr.odd {
-    background: #ccc;
-}
-th.lane {
-    width: 10%;
-}
-th.name {
-    width: 50%;
-}
-th.born, th.time {
-    width: 20%;
-}
 /* until a data file is uploaded, only the upload field is shown */
 body:not(.loaded) > :not(#upload),
 body.loaded > #upload {
     display: none;
 }
+
+/* ================= UPLOAD SCREEN ================= */
 #upload {
-    grid-column: 1 / -1;
+    padding: 1em;
     text-align: center;
     font-size: 20pt;
+}
+#upload h1 {
+    font-size: 24pt;
 }
 #dropZone {
     display: block;
@@ -103,4 +41,118 @@ body.loaded > #upload {
 }
 #uploadError {
     color: #b00020;
+}
+#keyHelp {
+    font-size: 14pt;
+    color: #444;
+}
+kbd {
+    padding: 0 0.3em;
+    border: 1px solid #888;
+    border-radius: 0.2em;
+    font-family: inherit;
+}
+
+/* ================= MAIN DISPLAY =================
+   All sizes are based on --u, 1% of the height of the largest 16:9 area
+   that fits the screen, so the display scales with any TV and never scrolls. */
+body.loaded {
+    --u: min(1vh, 0.5625vw);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: calc(2 * var(--u));
+    height: 100vh;
+    padding: calc(2 * var(--u)) calc(3 * var(--u));
+    box-sizing: border-box;
+    overflow: hidden;
+}
+body.loaded.hideCursor {
+    cursor: none;
+}
+header {
+    display: flex;
+    align-items: center;
+    gap: calc(3 * var(--u));
+    font-size: calc(7 * var(--u));
+    font-weight: bold;
+}
+header h1 {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+}
+#heatBox {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+header img {
+    height: calc(12 * var(--u));
+}
+main {
+    min-height: 0;
+}
+table {
+    width: 100%;
+    height: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+th {
+    font-size: calc(3.5 * var(--u));
+    color: #444;
+    padding-bottom: calc(1 * var(--u));
+}
+td {
+    font-size: calc(7 * var(--u));
+    padding: 0 calc(2 * var(--u));
+    white-space: nowrap;
+    overflow: hidden;
+    font-variant-numeric: tabular-nums;
+}
+th, td {
+    text-align: center;
+}
+th.name, td.name {
+    text-align: left;
+}
+td.lane {
+    font-weight: bold;
+}
+th.lane {
+    width: 10%;
+}
+th.name {
+    width: 54%;
+}
+th.born {
+    width: 16%;
+}
+th.time {
+    width: 20%;
+}
+tr.odd {
+    background: #ccc;
+}
+#next {
+    font-size: calc(4.5 * var(--u));
+    white-space: nowrap;
+    overflow: hidden;
+}
+#next[hidden] {
+    display: block;
+    visibility: hidden;
+}
+#notice {
+    position: fixed;
+    left: 50%;
+    bottom: calc(3 * var(--u));
+    transform: translateX(-50%);
+    padding: 0.5em 1em;
+    background: #b00020;
+    color: #ffffff;
+    font-size: calc(3 * var(--u));
+    border-radius: 0.3em;
 }

@@ -14,42 +14,36 @@
     <input type="file" id="dataFile" accept=".js,.json,.txt">
    </label>
    <p id="uploadError"></p>
+   <p id="keyHelp">
+    Steuerung: <kbd>→</kbd> / <kbd>Leertaste</kbd> nächster Lauf &middot;
+    <kbd>←</kbd> vorheriger Lauf &middot; <kbd>F</kbd> Vollbild
+   </p>
   </section>
   <header>
-   <h1>Wettkampf <span id="competitionId">1</span> &mdash; Lauf <span id="heat">1</span></h1>
-   <h1 id="competition">50 m Brust männlich</h1>
+   <h1>Wettkampf <span id="competitionId"></span> &ndash; <span id="competition"></span></h1>
+   <div id="heatBox">Lauf <span id="heat"></span>/<span id="heatCount"></span></div>
+   <img src="img/logo.jpg" alt="">
   </header>
-  <nav>
-   <ul id="list">
-    <li class="selected">Wettkampf 1 - 50 m Brust männlich</li>
-    <li class="none">Wettkampf 2 - 50 m Brust weiblich</li>
-   </ul>
-  </nav>
   <main>
    <table>
     <tr>
      <th class="lane">Bahn</th><th class="name">Name</th><th class="born">Jahrgang</th><th class="time">Meldezeit</th>
     </tr>
     <tr class="odd">
-     <td>1</td><td class="name" id="name1">Max Mustermann</td><td id="born1">1970</td><td id="time1">0:59:99</td>
+     <td class="lane">1</td><td class="name" id="name1"></td><td id="born1"></td><td id="time1"></td>
     </tr>
     <tr>
-     <td>2</td><td class="name" id="name2">Moritz Mustermann</td><td id="born2">1970</td><td id="time2">0:45:99</td>
+     <td class="lane">2</td><td class="name" id="name2"></td><td id="born2"></td><td id="time2"></td>
     </tr>
     <tr class="odd">
-     <td>3</td><td class="name" id="name3">Moritz Mustermann</td><td id="born3">1970</td><td id="time3">0:45:99</td>
+     <td class="lane">3</td><td class="name" id="name3"></td><td id="born3"></td><td id="time3"></td>
     </tr>
     <tr>
-     <td>4</td><td class="name" id="name4">Moritz Mustermann</td><td id="born4">1970</td><td id="time4">0:45:99</td>
+     <td class="lane">4</td><td class="name" id="name4"></td><td id="born4"></td><td id="time4"></td>
     </tr>
    </table>
   </main>
-  <aside>
-   <img src="img/logo.jpg" width="100%"/>
-  </aside>
-  <footer>
-   <div><a href="javascript:retreat();">&lt;</a></div>
-   <div><a href="javascript:advance();">&gt;</a></div>
-  </footer>
+  <footer id="next">Als Nächstes: <span id="nextCompetition"></span></footer>
+  <div id="notice" hidden></div>
  </body>
 </html>

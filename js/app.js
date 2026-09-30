@@ -21,6 +21,12 @@ function init() {
   // a file dropped next to the drop zone must not replace the page
   document.addEventListener("dragover", event => event.preventDefault());
   document.addEventListener("drop", event => event.preventDefault());
+
+  document.addEventListener("keydown", handleKey);
+  document.addEventListener("fullscreenchange", updateWakeLock);
+  document.addEventListener("visibilitychange", updateWakeLock);
+  document.addEventListener("mousemove", showCursor);
+  window.addEventListener("resize", () => json && fitAllText());
 }
 
 /* ================= DATA UPLOAD =================  */
@@ -95,35 +101,11 @@ function startCompetition(data) {
   currentCompetition = 0;
   currentHeat = 0;
   showUploadError("");
-  loadCompetitions();
-  updateCompetitions();
-  loadCurrent();
   document.body.classList.add("loaded");
+  loadCurrent();
 }
 
 /* ================= DISPLAY =================  */
-function loadCompetitions() {
-  let list = document.getElementById("list");
-  list.innerHTML = "";
-  for (let i = 0; i < 6; ++i) {
-    let li = document.createElement("li");
-    li.id = `competition${i}`;
-    list.appendChild(li);
-  }
-  document.getElementById("competition0").classList.add("selected");
-}
-function updateCompetitions() {
-  for (let i = 0; i < 6; ++i) {
-    if (currentCompetition + i >= competitions.length) {
-      document.getElementById(`competition${i}`).innerHTML = "";
-    } else {
-      let key = competitions[i + currentCompetition];
-      let name = json[key]["name"];
-      document.getElementById(`competition${i}`).innerHTML = `Wettkampf ${key} - ${name}`;
-    }
-  }
-
-}
 function loadCurrent() {
   let competition = competitions[currentCompetition];
   heats = Object.keys(json[competition]["heats"]);
@@ -131,6 +113,7 @@ function loadCurrent() {
   document.getElementById("competition").innerHTML = json[competition]["name"];
   document.getElementById("competitionId").innerHTML = competition;
   document.getElementById("heat").innerHTML = heat;
+  document.getElementById("heatCount").innerHTML = heats.length;
   // clear all lanes so empty lanes don't keep the previous heat's swimmers
   for (let lane = 1; document.getElementById(`name${lane}`); ++lane) {
     document.getElementById(`name${lane}`).innerHTML = "";
@@ -145,6 +128,28 @@ function loadCurrent() {
     document.getElementById(`born${key}`).innerHTML = field[key]["born"];
     document.getElementById(`time${key}`).innerHTML = field[key]["time"];
   }
+  updateNext();
+  fitAllText();
+}
+function updateNext() {
+  let next = competitions[currentCompetition + 1];
+  document.getElementById("next").hidden = next === undefined;
+  document.getElementById("nextCompetition").innerHTML =
+    next === undefined ? "" : `Wettkampf ${next} – ${json[next]["name"]}`;
+}
+// Shrink text that does not fit its box (long names, long competition
+// names) instead of wrapping or cutting it off.
+function fitText(element) {
+  element.style.fontSize = "";
+  let size = parseFloat(getComputedStyle(element).fontSize);
+  let min = size * 0.5;
+  while (element.scrollWidth > element.clientWidth && size > min) {
+    size *= 0.95;
+    element.style.fontSize = `${size}px`;
+  }
+}
+function fitAllText() {
+  document.querySelectorAll("header h1, td, #next").forEach(fitText);
 }
 function advance() {
   if (currentHeat == heats.length - 1) {
@@ -154,7 +159,6 @@ function advance() {
     // advance competition
     currentCompetition++;
     currentHeat = 0;
-    updateCompetitions();
   }
   else
     currentHeat++;
@@ -168,9 +172,79 @@ function retreat() {
     let competition = competitions[currentCompetition];
     heats = Object.keys(json[competition]["heats"]);
     currentHeat = heats.length - 1;
-    updateCompetitions();
   }
   else
     currentHeat--;
   loadCurrent();
+}
+
+/* ================= OPERATOR CONTROLS =================  */
+// Arrow keys, Page Up/Down and space are also what presentation clickers send.
+const advanceKeys = ["ArrowRight", "ArrowDown", "PageDown", " ", "Enter"];
+const retreatKeys = ["ArrowLeft", "ArrowUp", "PageUp", "Backspace"];
+function handleKey(event) {
+  if (!json || event.ctrlKey || event.altKey || event.metaKey)
+    return;
+  if (advanceKeys.includes(event.key))
+    advance();
+  else if (retreatKeys.includes(event.key))
+    retreat();
+  else if (event.key == "f" || event.key == "F")
+    toggleFullscreen();
+  else
+    return;
+  event.preventDefault();
+}
+function toggleFullscreen() {
+  if (document.fullscreenElement)
+    document.exitFullscreen();
+  else
+    document.documentElement.requestFullscreen()
+      .catch(e => showNotice(`Vollbild nicht möglich: ${e.message}`));
+}
+
+// While in fullscreen, keep the screen from going to sleep. The browser
+// drops the lock when the tab is hidden, so it is re-requested on return.
+let wakeLock = null;
+let wakeLockPending = false;
+async function updateWakeLock() {
+  let wanted = document.fullscreenElement && document.visibilityState == "visible";
+  if (wanted && !wakeLock && !wakeLockPending) {
+    if (!("wakeLock" in navigator)) {
+      showNotice("Dieser Browser kann den Bildschirm-Standby nicht verhindern.");
+      return;
+    }
+    wakeLockPending = true;
+    try {
+      let lock = await navigator.wakeLock.request("screen");
+      lock.addEventListener("release", () => { if (wakeLock === lock) wakeLock = null; });
+      wakeLock = lock;
+      wakeLockPending = false;
+      updateWakeLock(); // fullscreen may have been left in the meantime
+    } catch (e) {
+      wakeLockPending = false;
+      showNotice(`Bildschirm-Standby konnte nicht verhindert werden: ${e.message}`);
+    }
+  } else if (!wanted && wakeLock) {
+    let lock = wakeLock;
+    wakeLock = null;
+    lock.release();
+  }
+}
+
+let noticeTimer = null;
+function showNotice(message) {
+  let notice = document.getElementById("notice");
+  notice.textContent = message;
+  notice.hidden = false;
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => notice.hidden = true, 6000);
+}
+
+// hide the mouse pointer on the display until it is moved
+let cursorTimer = null;
+function showCursor() {
+  document.body.classList.remove("hideCursor");
+  clearTimeout(cursorTimer);
+  cursorTimer = setTimeout(() => document.body.classList.add("hideCursor"), 2000);
 }
