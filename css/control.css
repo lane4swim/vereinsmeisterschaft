@@ -204,7 +204,8 @@ kbd {
     font-weight: bold;
     text-align: center;
 }
-.preview tr.empty td:nth-child(2) {
+.preview tr.empty td:nth-child(2),
+.preview td.missing {
     color: #aaa;
 }
 .welcomePreview {

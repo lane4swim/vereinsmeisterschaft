@@ -149,7 +149,10 @@ function swimmersOf(field, athletes) {
     let id = athleteId(field[lane]);
     if (id === null)
       continue;
-    swimmers[Number(lane)] = { ...athletes.get(id), time: field[lane].time ?? "" };
+    // "" if no entry time is given; the display then shows a grey dash
+    let time = field[lane].time;
+    time = time === undefined || time === null ? "" : String(time).trim();
+    swimmers[Number(lane)] = { ...athletes.get(id), time };
   }
   return swimmers;
 }

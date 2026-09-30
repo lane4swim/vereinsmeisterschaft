@@ -114,7 +114,8 @@ th.name, td.name {
 td.lane {
     font-weight: bold;
 }
-tr.empty td.name {
+tr.empty td.name,
+td.missing {
     color: #aaa;
 }
 th.lane {

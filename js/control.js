@@ -212,11 +212,13 @@ function renderPreview(element, pos) {
     let swimmer = heat.swimmers[lane];
     let row = table.insertRow();
     row.classList.toggle("empty", !swimmer);
-    let texts = [lane, swimmer?.name ?? "–", swimmer?.born ?? "", swimmer?.time ?? ""];
+    let texts = [lane, swimmer?.name ?? "–", swimmer?.born ?? "", swimmer ? swimmer.time || "–" : ""];
     if (showClub)
       texts.splice(2, 0, swimmer?.club ?? "");
     for (const text of texts)
       row.insertCell().textContent = text;
+    // an athlete without entry time gets a greyed out dash
+    row.lastChild.classList.toggle("missing", !!swimmer && !swimmer.time);
   }
   element.append(title, sub, table);
 }

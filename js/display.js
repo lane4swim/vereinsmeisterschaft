@@ -90,7 +90,10 @@ function showHeat(heat, next) {
     document.getElementById(`name${lane}`).textContent = swimmer ? swimmer.name : "–";
     document.getElementById(`club${lane}`).textContent = swimmer ? swimmer.club : "";
     document.getElementById(`born${lane}`).textContent = swimmer ? swimmer.born : "";
-    document.getElementById(`time${lane}`).textContent = swimmer ? swimmer.time : "";
+    // an athlete without entry time gets a greyed out dash
+    let time = document.getElementById(`time${lane}`);
+    time.textContent = swimmer ? swimmer.time || "–" : "";
+    time.classList.toggle("missing", !!swimmer && !swimmer.time);
   });
   document.getElementById("next").hidden = !next;
   document.getElementById("nextCompetition").textContent = next ?? "";
