@@ -33,6 +33,7 @@ function init() {
   document.addEventListener("dragover", event => event.preventDefault());
   document.addEventListener("drop", event => event.preventDefault());
 
+  onClick("loadSample", loadSample);
   onClick("openDisplay", openDisplay);
   onClick("back", retreat);
   onClick("forward", advance);
@@ -89,11 +90,28 @@ function readDataFile(file, input) {
   reader.onerror = () => showUploadError("Die Datei konnte nicht gelesen werden.");
   reader.readAsText(file, "utf-8");
 }
+// Demonstration with the sample data in data/sample.json. Browsers only
+// allow reading it when the page comes from a web server, not from a file
+// opened directly (file://); then the file has to be dropped in by hand.
+async function loadSample() {
+  try {
+    let response = await fetch("data/sample.json", { cache: "no-store" });
+    if (!response.ok)
+      throw new Error(`HTTP ${response.status}`);
+    start(parseDataFile(await response.text()), true);
+  } catch (e) {
+    showUploadError(location.protocol == "file:"
+      ? "Die Beispieldaten können nicht automatisch geladen werden, wenn die Seite als Datei "
+        + "geöffnet ist. Bitte die Datei data/sample.json hierher ziehen oder oben auswählen."
+      : `Die Beispieldaten konnten nicht geladen werden: ${e.message}`);
+  }
+}
 function showUploadError(message) {
   document.getElementById("uploadError").textContent = message;
 }
-function start(newData) {
+function start(newData, isSample = false) {
   data = newData;
+  document.getElementById("demoBadge").hidden = !isSample;
   heatList = buildHeatList(data);
   position = { view: "welcome", index: 0 };
   showUploadError("");

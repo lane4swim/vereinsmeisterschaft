@@ -15,12 +15,17 @@
     <input type="file" id="dataFile" accept=".js,.json,.txt">
    </label>
    <p id="uploadError"></p>
+   <p id="demo">
+    Zum Ausprobieren:
+    <button id="loadSample">Beispieldaten laden</button>
+   </p>
   </section>
 
   <section id="control">
    <header>
     <div id="clock" aria-label="Uhrzeit"></div>
     <h1 id="eventName"></h1>
+    <span id="demoBadge" class="pill warn" hidden>Beispieldaten</span>
     <div id="status">
      <span id="stDisplay" class="pill"></span>
      <span id="stFullscreen" class="pill"></span>
