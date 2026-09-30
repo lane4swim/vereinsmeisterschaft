@@ -1,24 +1,99 @@
-let competitions = Object.keys(json);
-let heats = Object.keys(json["1"]["heats"]);
+let json = null;
+let competitions = [];
+let heats = [];
 let oldCompetition = 0;
 let currentCompetition = 0;
 let currentHeat = 0;
 function init() {
+  document.getElementById("dataFile").addEventListener("change", uploadData);
+}
+
+/* ================= DATA UPLOAD =================  */
+function uploadData(event) {
+  let file = event.target.files[0];
+  if (!file)
+    return;
+  let reader = new FileReader();
+  reader.onload = () => {
+    try {
+      startCompetition(parseDataFile(reader.result));
+    } catch (e) {
+      showUploadError(`Die Datei konnte nicht gelesen werden: ${e.message}`);
+      event.target.value = "";
+    }
+  };
+  reader.onerror = () => showUploadError("Die Datei konnte nicht gelesen werden.");
+  reader.readAsText(file, "utf-8");
+}
+// Accepts the format of data/data.js (`const json = {...};` with comments
+// and trailing commas) as well as plain JSON. The file is parsed, not executed.
+function parseDataFile(text) {
+  let stripped = "";
+  let quote = null;
+  for (let i = 0; i < text.length; ++i) {
+    let c = text[i];
+    if (quote) {
+      stripped += c;
+      if (c == "\\")
+        stripped += text[++i] ?? "";
+      else if (c == quote)
+        quote = null;
+    } else if (c == '"') {
+      quote = c;
+      stripped += c;
+    } else if (c == "/" && text[i + 1] == "*") {
+      let end = text.indexOf("*/", i + 2);
+      i = end < 0 ? text.length : end + 1;
+    } else if (c == "/" && text[i + 1] == "/") {
+      let end = text.indexOf("\n", i);
+      i = end < 0 ? text.length : end - 1;
+    } else {
+      stripped += c;
+    }
+  }
+  let start = stripped.indexOf("{");
+  let end = stripped.lastIndexOf("}");
+  if (start < 0 || end < start)
+    throw new Error("keine Wettkampfdaten gefunden");
+  let data = JSON.parse(stripped.slice(start, end + 1).replace(/,(\s*[}\]])/g, "$1"));
+  validateData(data);
+  return data;
+}
+function validateData(data) {
+  let keys = Object.keys(data);
+  if (keys.length == 0)
+    throw new Error("keine Wettkämpfe enthalten");
+  for (const key of keys) {
+    let competition = data[key];
+    if (typeof competition?.name != "string")
+      throw new Error(`Wettkampf ${key} hat keinen Namen`);
+    if (typeof competition.heats != "object" || competition.heats === null
+        || Object.keys(competition.heats).length == 0)
+      throw new Error(`Wettkampf ${key} hat keine Läufe`);
+  }
+}
+function showUploadError(message) {
+  document.getElementById("uploadError").textContent = message;
+}
+function startCompetition(data) {
+  json = data;
+  competitions = Object.keys(json);
+  currentCompetition = 0;
+  currentHeat = 0;
+  showUploadError("");
   loadCompetitions();
   updateCompetitions();
   loadCurrent();
+  document.body.classList.add("loaded");
 }
 
+/* ================= DISPLAY =================  */
 function loadCompetitions() {
   let list = document.getElementById("list");
   list.innerHTML = "";
-  let i = 0;
-  for (const key of competitions.slice(0, 6)) {
-    let name = json[key]["name"];
+  for (let i = 0; i < 6; ++i) {
     let li = document.createElement("li");
-    li.innerHTML = `Wettkampf ${key} - ${name}`;
     li.id = `competition${i}`;
-    i ++;
     list.appendChild(li);
   }
   document.getElementById("competition0").classList.add("selected");
@@ -42,8 +117,16 @@ function loadCurrent() {
   document.getElementById("competition").innerHTML = json[competition]["name"];
   document.getElementById("competitionId").innerHTML = competition;
   document.getElementById("heat").innerHTML = heat;
+  // clear all lanes so empty lanes don't keep the previous heat's swimmers
+  for (let lane = 1; document.getElementById(`name${lane}`); ++lane) {
+    document.getElementById(`name${lane}`).innerHTML = "";
+    document.getElementById(`born${lane}`).innerHTML = "";
+    document.getElementById(`time${lane}`).innerHTML = "";
+  }
   let field = json[competition]["heats"][heat];
   for (const key in field) {
+    if (!document.getElementById(`name${key}`))
+      continue; // lane not shown in the table
     document.getElementById(`name${key}`).innerHTML = field[key]["name"];
     document.getElementById(`born${key}`).innerHTML = field[key]["born"];
     document.getElementById(`time${key}`).innerHTML = field[key]["time"];

@@ -3,10 +3,15 @@
   <meta charset="utf-8">
   <title>Vereinsmeisterschaften 2025</title>
   <link rel="stylesheet" href="css/style.css">
-  <script src="js/data.js"></script>
   <script src="js/app.js"></script>
  </head>
  <body onload="init()">
+  <section id="upload">
+   <h1>Vereinsmeisterschaften 2025</h1>
+   <label for="dataFile">Bitte Datendatei hochladen:</label>
+   <input type="file" id="dataFile" accept=".js,.json,.txt">
+   <p id="uploadError"></p>
+  </section>
   <header>
    <h1>Wettkampf <span id="competitionId">1</span> &mdash; Lauf <span id="heat">1</span></h1>
    <h1 id="competition">50 m Brust männlich</h1>
