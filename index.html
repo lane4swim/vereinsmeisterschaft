@@ -4,6 +4,7 @@
   <title>Regie – Vereinsmeisterschaften</title>
   <link rel="stylesheet" href="css/control.css">
   <script src="js/datafile.js"></script>
+  <script src="js/dsv.js"></script>
   <script src="js/control.js"></script>
  </head>
  <body onload="init()">
@@ -12,8 +13,13 @@
    <label for="dataFile" id="dropZone">
     Datendatei hierher ziehen
     <span>oder</span>
-    <input type="file" id="dataFile" accept=".js,.json,.txt">
+    <input type="file" id="dataFile" accept=".json,.js,.txt,.dsv7,.dsv">
    </label>
+   <p id="dsvOption">
+    <label>Anzahl Bahnen für DSV7-Meldelisten:
+     <input type="number" id="dsvLanes" min="1" max="10" value="4"></label>
+    <small>Die Läufe werden daraus nach Meldezeit gesetzt.</small>
+   </p>
    <p id="uploadError"></p>
    <p id="demo">
     Zum Ausprobieren:
