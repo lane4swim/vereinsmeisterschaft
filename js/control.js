@@ -76,7 +76,7 @@ function showUploadError(message) {
 }
 function start(newData) {
   data = newData;
-  heatList = buildHeatList(data.startlist);
+  heatList = buildHeatList(data);
   position = { view: "welcome", index: 0 };
   showUploadError("");
   document.title = `Regie – ${data.competition}`;

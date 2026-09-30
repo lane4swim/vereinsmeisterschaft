@@ -39,10 +39,11 @@ function parseDataFile(text) {
 function validateData(data) {
   if (typeof data.competition != "string" || data.competition.trim() == "")
     throw new Error('Eintrag "competition" (Name der Veranstaltung) fehlt');
-  if (typeof data.startlist != "object" || data.startlist === null)
-    throw new Error('Eintrag "startlist" fehlt');
   if (!Number.isInteger(data.lanes) || data.lanes < 1)
     throw new Error('Eintrag "lanes" (Anzahl der Bahnen) fehlt oder ist keine positive Zahl');
+  let athletes = athleteMap(data.athletes);
+  if (typeof data.startlist != "object" || data.startlist === null)
+    throw new Error('Eintrag "startlist" fehlt');
   let [firstLane, lastLane] = laneRange(data.lanes);
   let keys = Object.keys(data.startlist);
   if (keys.length == 0)
@@ -54,12 +55,67 @@ function validateData(data) {
     if (typeof competition.heats != "object" || competition.heats === null
         || Object.keys(competition.heats).length == 0)
       throw new Error(`Wettkampf ${key} hat keine Läufe`);
-    for (const heat in competition.heats)
-      for (const lane in competition.heats[heat])
+    for (const heat in competition.heats) {
+      let seen = new Set();
+      for (const lane in competition.heats[heat]) {
+        let where = `Wettkampf ${key}, Lauf ${heat}, Bahn ${lane}`;
         if (!/^\d+$/.test(lane) || Number(lane) < firstLane || Number(lane) > lastLane)
           throw new Error(`Wettkampf ${key}, Lauf ${heat}: "${lane}" ist keine Bahn `
             + `(erlaubt: ${firstLane}–${lastLane})`);
+        let id = athleteId(competition.heats[heat][lane]);
+        if (id === null)
+          continue; // empty lane
+        if (!athletes.has(id))
+          throw new Error(`${where}: Athlet "${id}" steht nicht in "athletes"`);
+        if (seen.has(id))
+          throw new Error(`${where}: Athlet "${id}" ist in diesem Lauf mehrfach eingetragen`);
+        seen.add(id);
+      }
+    }
   }
+}
+// The athletes by id. Every athlete needs a unique id and a name; the
+// birthday may be a full date ("1970-05-12" or "12.05.1970") or just the year.
+function athleteMap(list) {
+  if (!Array.isArray(list))
+    throw new Error('Eintrag "athletes" (Liste der Athleten) fehlt');
+  let athletes = new Map();
+  list.forEach((athlete, i) => {
+    let id = athlete?.id;
+    if ((typeof id != "string" && typeof id != "number") || String(id).trim() == "")
+      throw new Error(`Athlet Nr. ${i + 1} in "athletes" hat keine id`);
+    id = String(id).trim();
+    if (athletes.has(id))
+      throw new Error(`Die id "${id}" ist in "athletes" mehrfach vergeben`);
+    if (typeof athlete.name != "string" || athlete.name.trim() == "")
+      throw new Error(`Athlet "${id}" hat keinen Namen`);
+    let year = birthYear(athlete.birthday);
+    if (year === null)
+      throw new Error(`Athlet "${id}": Geburtsdatum "${athlete.birthday}" nicht erkannt `
+        + '(erwartet z. B. "1970-05-12", "12.05.1970" oder "1970")');
+    athletes.set(id, {
+      name: athlete.name,
+      born: year,
+      club: typeof athlete.club == "string" ? athlete.club : "",
+    });
+  });
+  return athletes;
+}
+// The year of birth ("Jahrgang") shown on the display; "" if not given.
+function birthYear(birthday) {
+  if (birthday === undefined || birthday === null || birthday === "")
+    return "";
+  let text = String(birthday).trim();
+  let match = text.match(/^(\d{4})(-\d{1,2}-\d{1,2})?$/) || text.match(/^\d{1,2}\.\d{1,2}\.(\d{4})$/);
+  return match ? match[1] : null;
+}
+// The athlete id a lane refers to, or null for an empty lane
+// (lane missing, {} or "athlete": "" / null).
+function athleteId(entry) {
+  let id = entry?.athlete;
+  if ((typeof id != "string" && typeof id != "number") || String(id).trim() == "")
+    return null;
+  return String(id).trim();
 }
 // Pools with fewer than 10 lanes number them from 1, larger pools from 0
 // (a 10-lane pool has lanes 0-9).
@@ -68,10 +124,11 @@ function laneRange(lanes) {
 }
 // All heats of the start list in running order, so the current position is a
 // single index and "next"/"previous" never have to deal with competitions.
-function buildHeatList(startlist) {
+function buildHeatList(data) {
+  let athletes = athleteMap(data.athletes);
   let list = [];
-  for (const competitionId of Object.keys(startlist)) {
-    let competition = startlist[competitionId];
+  for (const competitionId of Object.keys(data.startlist)) {
+    let competition = data.startlist[competitionId];
     let heatIds = Object.keys(competition.heats);
     heatIds.forEach((heatId, i) => list.push({
       competitionId,
@@ -79,24 +136,20 @@ function buildHeatList(startlist) {
       heatId,
       heatIndex: i,
       heatCount: heatIds.length,
-      swimmers: swimmersOf(competition.heats[heatId]),
+      swimmers: swimmersOf(competition.heats[heatId], athletes),
     }));
   }
   return list;
 }
-// The swimmers of one heat by lane number. A lane listed without a swimmer
-// name (e.g. {} or "name": "") counts as empty and is left out.
-function swimmersOf(field) {
+// The swimmers of one heat by lane number, with the athlete's details looked
+// up by id. Empty lanes are left out.
+function swimmersOf(field, athletes) {
   let swimmers = {};
-  for (const key in field) {
-    let swimmer = field[key];
-    if (typeof swimmer?.name != "string" || swimmer.name.trim() == "")
+  for (const lane in field) {
+    let id = athleteId(field[lane]);
+    if (id === null)
       continue;
-    swimmers[Number(key)] = {
-      name: swimmer.name,
-      born: swimmer.born ?? "",
-      time: swimmer.time ?? "",
-    };
+    swimmers[Number(lane)] = { ...athletes.get(id), time: field[lane].time ?? "" };
   }
   return swimmers;
 }
