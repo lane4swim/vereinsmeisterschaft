@@ -1,0 +1,42 @@
+{
+  "competition" : "Vereinsmeisterschaften 2026",
+  "lanes" : 4,
+  "athletes": [
+    { "id" : "1", "name": "Name_1", "birthday" : "1970-05-12", "club" : "WSV Schermbeck" },
+    { "id" : "2", "name": "Name_2", "birthday" : "1971", "club": "WSV Schermbeck" },
+    { "id" : "3", "name": "Name_2", "birthday" : "1971", "club": "WSV Schermbeck" },
+    { "id" : "4", "name": "Name_2", "birthday" : "1971", "club": "WSV Schermbeck" }
+  ],
+  "startlist": {
+    "1": {
+      "name": "100 m Brust männlich",
+      "heats": {
+        "1": {
+          "1": { "athlete": "1", "time": 106.72},
+          "2": { "athlete": "2", "time": 113.87},
+          "3": { "athlete": "3",  "time": 107.73}
+        },
+        "2": {
+          "2": { "athlete": "1", "time": 106.72},
+          "3": { "athlete": "2", "time": null},
+          "4": { "athlete": "3",  "time": 95.76}
+        }
+      }
+    },
+    "101": {
+      "name": "25 m Freistil weiblich",
+      "heats": {
+        "1": {
+          "2": { "athlete": "2", "time": 16.78},
+          "3": { "athlete": "1",  "time": 22.99}
+        },
+        "2": {
+          "1": { "athlete": "4" },
+          "2": { "athlete": "1", "time": 18.95},
+          "3": { "athlete": "2", "time": 16.56},
+          "4": { "athlete": "3", "time": 21.20}
+        }
+      }
+    }
+  }
+}
