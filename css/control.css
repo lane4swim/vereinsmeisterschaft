@@ -269,3 +269,13 @@ kbd {
 #notice[hidden] {
     display: none;
 }
+#clubOption {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    cursor: pointer;
+}
+#clubOption input {
+    width: 1.2em;
+    height: 1.2em;
+}

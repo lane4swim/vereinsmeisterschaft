@@ -8,6 +8,9 @@ let heatList = [];      // all heats in running order, see buildHeatList()
 // is shown.
 let position = { view: "welcome", index: 0 };
 
+// whether the TV table has a club column; remembered for the next start
+let showClub = loadSetting("showClub") == "true";
+
 let displayWindow = null;
 let displayStatus = null;
 let lastSeen = 0;
@@ -34,6 +37,14 @@ function init() {
   onClick("back", retreat);
   onClick("forward", advance);
   onClick("welcomeBreak", welcomeBreak);
+  let clubBox = document.getElementById("showClub");
+  clubBox.checked = showClub;
+  clubBox.addEventListener("change", () => {
+    showClub = clubBox.checked;
+    saveSetting("showClub", showClub);
+    clubBox.blur();
+    update();
+  });
   document.addEventListener("keydown", event => {
     if (handleKey(event.key, event))
       event.preventDefault();
@@ -201,7 +212,10 @@ function renderPreview(element, pos) {
     let swimmer = heat.swimmers[lane];
     let row = table.insertRow();
     row.classList.toggle("empty", !swimmer);
-    for (const text of [lane, swimmer?.name ?? "–", swimmer?.born ?? "", swimmer?.time ?? ""])
+    let texts = [lane, swimmer?.name ?? "–", swimmer?.born ?? "", swimmer?.time ?? ""];
+    if (showClub)
+      texts.splice(2, 0, swimmer?.club ?? "");
+    for (const text of texts)
       row.insertCell().textContent = text;
   }
   element.append(title, sub, table);
@@ -280,6 +294,7 @@ function sendState() {
     type: "state",
     event: data.competition,
     lanes: data.lanes,
+    showClub,
     view: position.view,
     heat: position.view == "heat" ? heatList[position.index] : null,
     next,
@@ -337,4 +352,21 @@ function showNotice(message) {
   notice.hidden = false;
   clearTimeout(noticeTimer);
   noticeTimer = setTimeout(() => notice.hidden = true, 8000);
+}
+
+// Settings are kept in the browser; this may fail (e.g. private windows),
+// in which case the default is used.
+function loadSetting(name) {
+  try {
+    return localStorage.getItem(`vm-${name}`);
+  } catch (e) {
+    return null;
+  }
+}
+function saveSetting(name, value) {
+  try {
+    localStorage.setItem(`vm-${name}`, value);
+  } catch (e) {
+    // not remembered, but still in effect for this session
+  }
 }

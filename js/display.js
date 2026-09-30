@@ -53,6 +53,7 @@ function show(state) {
   document.getElementById("welcomeName").textContent = state.event;
   if (state.lanes != lanes)
     buildLanes(state.lanes);
+  document.getElementById("lanes").classList.toggle("withClub", !!state.showClub);
   document.body.className = state.view;
   if (state.view == "heat")
     showHeat(state.heat, state.next);
@@ -70,6 +71,7 @@ function buildLanes(count) {
     row.className = "laneRow";
     row.id = `lane${lane}`;
     row.innerHTML = `<td class="lane">${lane}</td><td class="name" id="name${lane}"></td>`
+      + `<td class="club" id="club${lane}"></td>`
       + `<td id="born${lane}"></td><td id="time${lane}"></td>`;
     table.tBodies[0].appendChild(row);
   }
@@ -86,6 +88,7 @@ function showHeat(heat, next) {
     let swimmer = heat.swimmers[lane];
     row.classList.toggle("empty", !swimmer);
     document.getElementById(`name${lane}`).textContent = swimmer ? swimmer.name : "–";
+    document.getElementById(`club${lane}`).textContent = swimmer ? swimmer.club : "";
     document.getElementById(`born${lane}`).textContent = swimmer ? swimmer.born : "";
     document.getElementById(`time${lane}`).textContent = swimmer ? swimmer.time : "";
   });
@@ -93,15 +96,33 @@ function showHeat(heat, next) {
   document.getElementById("nextCompetition").textContent = next ?? "";
 }
 // Shrink text that does not fit its box (long names, long competition
-// names) instead of wrapping or cutting it off.
+// names) instead of cutting it off. Names and clubs that would get too
+// small on one line are put on two lines instead.
 function fitText(element) {
   element.style.fontSize = "";
-  let size = parseFloat(getComputedStyle(element).fontSize);
-  let min = size * 0.5;
-  while (element.scrollWidth > element.clientWidth && size > min) {
+  element.classList.remove("twoLines");
+  let base = parseFloat(getComputedStyle(element).fontSize);
+  let size = shrink(element, base, base * 0.7, () => element.scrollWidth > element.clientWidth);
+  if (element.scrollWidth <= element.clientWidth)
+    return;
+  if (!element.matches("td.name, td.club")) {
+    shrink(element, size, base * 0.5, () => element.scrollWidth > element.clientWidth);
+    return;
+  }
+  element.classList.add("twoLines");
+  let text = document.createRange();
+  text.selectNodeContents(element);
+  let tooBig = () => element.scrollWidth > element.clientWidth
+    || text.getBoundingClientRect().height > 2.5 * parseFloat(element.style.fontSize);
+  shrink(element, base * 0.7, base * 0.35, tooBig);
+}
+function shrink(element, size, min, tooBig) {
+  element.style.fontSize = `${size}px`;
+  while (tooBig() && size > min) {
     size *= 0.95;
     element.style.fontSize = `${size}px`;
   }
+  return size;
 }
 function fitAllText() {
   document.querySelectorAll("header h1, td, #next, #welcomeName").forEach(fitText);

@@ -129,6 +129,37 @@ th.born {
 th.time {
     width: 20%;
 }
+/* the club column is switched on in the control window */
+table:not(.withClub) .club {
+    display: none;
+}
+table.withClub th.lane {
+    width: 8%;
+}
+table.withClub th.name {
+    width: 40%;
+}
+table.withClub th.club {
+    width: 24%;
+}
+table.withClub th.born {
+    width: 12%;
+}
+table.withClub th.time {
+    width: 16%;
+}
+th.club, td.club {
+    text-align: left;
+}
+/* the club is secondary, so it starts a bit smaller than the name */
+td.club {
+    font-size: calc(0.8 * min(calc(7 * var(--u)), calc(40 * var(--u) / var(--lanes, 4))));
+}
+/* long names and clubs may take two lines (see fitText in display.js) */
+td.twoLines {
+    white-space: normal;
+    line-height: 1.1;
+}
 /* horizontal separators below the header row and between the lanes */
 tr:not(:last-child) {
     border-bottom: calc(0.3 * var(--u)) solid #666;
