@@ -56,6 +56,13 @@ function init() {
       event.preventDefault();
   });
   setInterval(updateStatus, 1000);
+  updateClock();
+  setInterval(updateClock, 1000);
+}
+// current time to the minute, e.g. "14:05"
+function updateClock() {
+  document.getElementById("clock").textContent =
+    new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 }
 // Buttons give the focus back right away, so that space and Enter from the
 // keyboard or clicker are not also taken as a click on the last button.
