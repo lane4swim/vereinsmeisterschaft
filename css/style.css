@@ -5,7 +5,9 @@ body {
 
 /* until a data file is uploaded, only the upload field is shown */
 body:not(.loaded) > :not(#upload),
-body.loaded > #upload {
+body.loaded > #upload,
+body.loaded.welcome > :not(#welcome, #notice),
+body.loaded:not(.welcome) > #welcome {
     display: none;
 }
 
@@ -51,6 +53,30 @@ kbd {
     border: 1px solid #888;
     border-radius: 0.2em;
     font-family: inherit;
+}
+
+/* ================= WELCOME SCREEN ================= */
+body.loaded.welcome {
+    grid-template-rows: 1fr;
+}
+#welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(5 * var(--u));
+    min-height: 0;
+}
+#welcome img {
+    height: calc(55 * var(--u));
+}
+#welcome h1 {
+    max-width: 100%;
+    margin: 0;
+    font-size: calc(9 * var(--u));
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 /* ================= MAIN DISPLAY =================

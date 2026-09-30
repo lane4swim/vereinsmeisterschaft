@@ -1,4 +1,4 @@
-let json = null;
+let json = null; // the start list: competitions with their heats
 let competitions = [];
 let heats = [];
 let oldCompetition = 0;
@@ -26,7 +26,10 @@ function init() {
   document.addEventListener("fullscreenchange", updateWakeLock);
   document.addEventListener("visibilitychange", updateWakeLock);
   document.addEventListener("mousemove", showCursor);
-  window.addEventListener("resize", () => json && fitAllText());
+  window.addEventListener("resize", () => {
+    if (json)
+      fitAllText();
+  });
 }
 
 /* ================= DATA UPLOAD =================  */
@@ -80,11 +83,15 @@ function parseDataFile(text) {
   return data;
 }
 function validateData(data) {
-  let keys = Object.keys(data);
+  if (typeof data.competition != "string" || data.competition.trim() == "")
+    throw new Error('Eintrag "competition" (Name der Veranstaltung) fehlt');
+  if (typeof data.startlist != "object" || data.startlist === null)
+    throw new Error('Eintrag "startlist" fehlt');
+  let keys = Object.keys(data.startlist);
   if (keys.length == 0)
-    throw new Error("keine Wettkämpfe enthalten");
+    throw new Error("keine Wettkämpfe in der Startliste");
   for (const key of keys) {
-    let competition = data[key];
+    let competition = data.startlist[key];
     if (typeof competition?.name != "string")
       throw new Error(`Wettkampf ${key} hat keinen Namen`);
     if (typeof competition.heats != "object" || competition.heats === null
@@ -96,13 +103,24 @@ function showUploadError(message) {
   document.getElementById("uploadError").textContent = message;
 }
 function startCompetition(data) {
-  json = data;
+  json = data.startlist;
   competitions = Object.keys(json);
   currentCompetition = 0;
   currentHeat = 0;
   showUploadError("");
+  document.getElementById("welcomeName").textContent = data.competition;
+  document.title = data.competition;
   document.body.classList.add("loaded");
-  loadCurrent();
+  showWelcome(true);
+}
+
+/* ================= WELCOME SCREEN =================  */
+function showWelcome(show) {
+  document.body.classList.toggle("welcome", show);
+  if (show)
+    fitText(document.getElementById("welcomeName"));
+  else
+    loadCurrent();
 }
 
 /* ================= DISPLAY =================  */
@@ -149,9 +167,11 @@ function fitText(element) {
   }
 }
 function fitAllText() {
-  document.querySelectorAll("header h1, td, #next").forEach(fitText);
+  document.querySelectorAll("header h1, td, #next, #welcomeName").forEach(fitText);
 }
 function advance() {
+  if (document.body.classList.contains("welcome"))
+    return showWelcome(false); // start with the first heat of the first competition
   if (currentHeat == heats.length - 1) {
     if (currentCompetition == competitions.length - 1) {
       return; // Alternativ: Wettkampf beendet
@@ -165,9 +185,11 @@ function advance() {
   loadCurrent();
 }
 function retreat() {
+  if (document.body.classList.contains("welcome"))
+    return;
   if (currentHeat == 0) {
     if (currentCompetition == 0)
-      return;
+      return showWelcome(true);
     currentCompetition--;
     let competition = competitions[currentCompetition];
     heats = Object.keys(json[competition]["heats"]);
