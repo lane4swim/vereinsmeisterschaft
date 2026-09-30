@@ -8,8 +8,11 @@
  <body onload="init()">
   <section id="upload">
    <h1>Vereinsmeisterschaften 2025</h1>
-   <label for="dataFile">Bitte Datendatei hochladen:</label>
-   <input type="file" id="dataFile" accept=".js,.json,.txt">
+   <label for="dataFile" id="dropZone">
+    Datendatei hierher ziehen
+    <span>oder</span>
+    <input type="file" id="dataFile" accept=".js,.json,.txt">
+   </label>
    <p id="uploadError"></p>
   </section>
   <header>

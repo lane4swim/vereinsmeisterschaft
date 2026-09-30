@@ -80,9 +80,25 @@ body.loaded > #upload {
     text-align: center;
     font-size: 20pt;
 }
-#upload input {
+#dropZone {
     display: block;
+    max-width: 30em;
     margin: 1em auto;
+    padding: 2em 1em;
+    border: 3px dashed #373f94;
+    border-radius: 0.5em;
+    color: #373f94;
+}
+#dropZone.dragover {
+    background: #373f94;
+    color: #ffffff;
+}
+#dropZone span {
+    display: block;
+    margin: 0.5em 0;
+    font-size: 14pt;
+}
+#upload input {
     font-size: 16pt;
 }
 #uploadError {

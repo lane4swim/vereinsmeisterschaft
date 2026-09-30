@@ -5,12 +5,26 @@ let oldCompetition = 0;
 let currentCompetition = 0;
 let currentHeat = 0;
 function init() {
-  document.getElementById("dataFile").addEventListener("change", uploadData);
+  let input = document.getElementById("dataFile");
+  input.addEventListener("change", () => readDataFile(input.files[0], input));
+  let dropZone = document.getElementById("dropZone");
+  dropZone.addEventListener("dragover", event => {
+    event.preventDefault();
+    dropZone.classList.add("dragover");
+  });
+  dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+  dropZone.addEventListener("drop", event => {
+    event.preventDefault();
+    dropZone.classList.remove("dragover");
+    readDataFile(event.dataTransfer.files[0], input);
+  });
+  // a file dropped next to the drop zone must not replace the page
+  document.addEventListener("dragover", event => event.preventDefault());
+  document.addEventListener("drop", event => event.preventDefault());
 }
 
 /* ================= DATA UPLOAD =================  */
-function uploadData(event) {
-  let file = event.target.files[0];
+function readDataFile(file, input) {
   if (!file)
     return;
   let reader = new FileReader();
@@ -19,7 +33,7 @@ function uploadData(event) {
       startCompetition(parseDataFile(reader.result));
     } catch (e) {
       showUploadError(`Die Datei konnte nicht gelesen werden: ${e.message}`);
-      event.target.value = "";
+      input.value = "";
     }
   };
   reader.onerror = () => showUploadError("Die Datei konnte nicht gelesen werden.");
