@@ -5,7 +5,7 @@
 // Program version, shared by both windows. Change it with every update of
 // the program: a display window that was opened with an older version then
 // notices the difference and reloads itself (see display.js).
-const APP_VERSION = "2026-10-01.2";
+const APP_VERSION = "2026-10-01.3";
 
 // Accepts the format of data/data.js (`const json = {...};` with comments
 // and trailing commas) as well as plain JSON. The file is parsed, not executed.
@@ -60,6 +60,14 @@ function validateData(data) {
     if (typeof competition.heats != "object" || competition.heats === null
         || Object.keys(competition.heats).length == 0)
       throw new Error(`Wettkampf ${key} hat keine Läufe`);
+    // optional planned start times per heat, e.g. "starts": { "1": "11:00" }
+    for (const heat in competition.starts ?? {}) {
+      if (!(heat in competition.heats))
+        throw new Error(`Wettkampf ${key}: Startzeit für Lauf ${heat}, den es nicht gibt`);
+      if (!/^\d{1,2}:\d{2}$/.test(competition.starts[heat]))
+        throw new Error(`Wettkampf ${key}, Lauf ${heat}: Startzeit "${competition.starts[heat]}" `
+          + 'nicht erkannt (erwartet z. B. "11:04")');
+    }
     for (const heat in competition.heats) {
       let seen = new Set();
       for (const lane in competition.heats[heat]) {
@@ -160,6 +168,7 @@ function buildHeatList(data) {
       heatId,
       heatIndex: i,
       heatCount: heatIds.length,
+      plannedStart: competition.starts?.[heatId] ?? "",
       swimmers: swimmersOf(competition.heats[heatId], athletes),
     }));
   }

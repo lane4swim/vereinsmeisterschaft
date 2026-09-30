@@ -65,6 +65,40 @@ function init() {
 function updateClock() {
   document.getElementById("clock").textContent =
     new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  updateSchedule();
+}
+// Planned start of the heat on the display (or, on the welcome screen, of
+// the heat that follows) compared with the clock: how far the event is
+// ahead of or behind the plan. Differences of more than 3 hours (e.g. when
+// testing on another day) are not shown as a deviation.
+function updateSchedule() {
+  let element = document.getElementById("schedule");
+  let heat = data && heatList[position.index];
+  if (!heat?.plannedStart) {
+    element.hidden = true;
+    return;
+  }
+  let [hours, minutes] = heat.plannedStart.split(":").map(Number);
+  let now = new Date();
+  let delay = now.getHours() * 60 + now.getMinutes() - (hours * 60 + minutes);
+  let state = "", text = "";
+  if (Math.abs(delay) <= 180) {
+    if (delay > 1)
+      [state, text] = ["warn", `${delay} Min. hinter Plan`];
+    else if (delay < -1)
+      [state, text] = ["ok", `${-delay} Min. vor Plan`];
+    else
+      [state, text] = ["ok", "im Zeitplan"];
+  }
+  let label = position.view == "welcome" ? "nächster Lauf geplant" : "Lauf geplant";
+  element.innerHTML = `<div><span class="label"></span> <b></b></div><span class="pill"></span>`;
+  element.querySelector(".label").textContent = label;
+  element.querySelector("b").textContent = heat.plannedStart;
+  let pill = element.querySelector(".pill");
+  pill.textContent = text;
+  pill.className = `pill ${state}`;
+  pill.hidden = !text;
+  element.hidden = false;
 }
 // Buttons give the focus back right away, so that space and Enter from the
 // keyboard or clicker are not also taken as a click on the last button.
@@ -207,6 +241,7 @@ function handleKey(key, event) {
 
 /* ================= CONTROL WINDOW VIEW =================  */
 function update() {
+  updateSchedule();
   sendState();
   renderPreview(document.getElementById("nowView"), position);
   renderPreview(document.getElementById("nextView"), nextPosition());
@@ -250,7 +285,8 @@ function renderPreview(element, pos) {
   title.textContent = heatTitle(heat);
   let sub = document.createElement("div");
   sub.className = "sub";
-  sub.textContent = `Lauf ${heat.heatId}/${heat.heatCount}`;
+  sub.textContent = `Lauf ${heat.heatId}/${heat.heatCount}`
+    + (heat.plannedStart ? ` · geplant ${heat.plannedStart} Uhr` : "");
   let table = document.createElement("table");
   let [first, last] = laneRange(data.lanes);
   for (let lane = first; lane <= last; ++lane) {
@@ -291,6 +327,11 @@ function buildHeatListView() {
     button.className = "heat";
     button.dataset.index = index;
     button.textContent = `Lauf ${heat.heatId}`;
+    if (heat.plannedStart) {
+      let time = document.createElement("small");
+      time.textContent = heat.plannedStart;
+      button.append(time);
+    }
     button.addEventListener("click", event => {
       event.currentTarget.blur();
       jumpTo(index);

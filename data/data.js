@@ -11,6 +11,8 @@ const json = {
   "startlist": {
     "1": {
       "name": "100 m Brust männlich",
+      /* optional: planned start time per heat, shown in the control window */
+      "starts": { "1": "11:00" },
       "heats": {
         "1": {
           "1": { "athlete": "1", "time": 85.4 }

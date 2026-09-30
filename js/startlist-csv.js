@@ -46,6 +46,9 @@ function parseCsvStartlist(text, eventName) {
 
     let competition = startlist[row.Wk] ??= { name: competitionTitle(row), heats: {} };
     let heat = competition.heats[Number(row.Lauf)] ??= {};
+    // planned start time of the heat, shown in the control window
+    if (/^\d{1,2}:\d{2}$/.test(row.Uhrzeit ?? ""))
+      (competition.starts ??= {})[Number(row.Lauf)] ??= row.Uhrzeit;
     let lane = Number(row.Bahn);
     if (heat[lane])
       throw new Error(`${where}: Wettkampf ${row.Wk}, Lauf ${row.Lauf}, Bahn ${lane} ist doppelt belegt`);

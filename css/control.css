@@ -312,3 +312,30 @@ kbd {
     width: 18em;
     font-size: inherit;
 }
+/* planned start time of the current heat next to the clock */
+#schedule {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15em;
+    padding-right: 0.8em;
+    border-right: 2px solid rgba(255, 255, 255, 0.5);
+    font-size: 0.9em;
+    line-height: 1.2;
+}
+#schedule[hidden],
+#schedule .pill[hidden] {
+    display: none;
+}
+#schedule b {
+    font-size: 1.3em;
+    font-variant-numeric: tabular-nums;
+}
+.competition .heat small {
+    margin-left: 0.4em;
+    font-size: 0.8em;
+    color: #555;
+}
+.competition .heat.current small {
+    color: #dde0f5;
+}
