@@ -5,7 +5,7 @@
 // Program version, shared by both windows. Change it with every update of
 // the program: a display window that was opened with an older version then
 // notices the difference and reloads itself (see display.js).
-const APP_VERSION = "2026-10-01.7";
+const APP_VERSION = "2026-10-01.8";
 
 // Accepts the format of data/data.js (`const json = {...};` with comments
 // and trailing commas) as well as plain JSON. The file is parsed, not executed.
@@ -90,6 +90,65 @@ function validateData(data) {
       }
     }
   }
+  validateScreens(data);
+}
+// Optional additional screens between the heats (title and text), e.g.
+// { "after": { "competition": "8", "heat": "5" }, "title": "Siegerehrung",
+// "text": "Wettkämpfe 1–8" }. Without "after" the screen comes before the
+// first heat.
+function validateScreens(data) {
+  if (data.screens === undefined)
+    return;
+  if (!Array.isArray(data.screens))
+    throw new Error('Eintrag "screens" muss eine Liste sein');
+  data.screens.forEach((screen, i) => {
+    let which = `Bildschirm Nr. ${i + 1} in "screens"`;
+    if (typeof screen?.title != "string" || screen.title.trim() == "")
+      throw new Error(`${which} hat keinen Titel ("title")`);
+    if (screen.text !== undefined && typeof screen.text != "string")
+      throw new Error(`${which}: "text" muss ein Text sein`);
+    if (screen.after === undefined || screen.after === null)
+      return;
+    let competition = data.startlist[String(screen.after.competition)];
+    if (!competition || !(String(screen.after.heat) in competition.heats))
+      throw new Error(`${which} steht nach Wettkampf ${screen.after.competition}, `
+        + `Lauf ${screen.after.heat}, den es nicht gibt`);
+  });
+}
+// The running order: all heats (see buildHeatList), each followed by the
+// screens placed after it; screens without "after" come first.
+// Heats: { kind: "heat", ... }, screens: { kind: "screen", title, text }.
+function buildProgram(data) {
+  let screens = (data.screens ?? []).map(screen => ({
+    kind: "screen",
+    title: screen.title.trim(),
+    text: (screen.text ?? "").trim(),
+    after: screen.after ? `${screen.after.competition}/${screen.after.heat}` : "",
+  }));
+  let program = screens.filter(screen => screen.after == "");
+  for (const heat of buildHeatList(data)) {
+    program.push({ kind: "heat", ...heat });
+    program.push(...screens.filter(screen =>
+      screen.after == `${heat.competitionId}/${heat.heatId}`));
+  }
+  return program;
+}
+// The "screens" entry for the data file from the running order: each screen
+// placed after the heat before it.
+function screensOf(program) {
+  let screens = [];
+  let lastHeat = null;
+  for (const item of program) {
+    if (item.kind == "heat")
+      lastHeat = item;
+    else
+      screens.push({
+        ...(lastHeat ? { after: { competition: lastHeat.competitionId, heat: lastHeat.heatId } } : {}),
+        title: item.title,
+        ...(item.text ? { text: item.text } : {}),
+      });
+  }
+  return screens;
 }
 // The athletes by id. Every athlete needs a unique id and a last name
 // ("lastName", usually with "firstName"); the display shows "Nachname,

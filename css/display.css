@@ -1,11 +1,13 @@
 /* Spectator display (display.html). The body class says what is shown:
-   "waiting" (no data yet), "welcome" or "heat". */
+   "waiting" (no data yet), "welcome", "heat" or "screen" (a screen with
+   title and text). */
 body {
     margin: 0;
     font-family: 'Arial';
     background: #ffffff;
 }
-body.heat > #welcome,
+body:not(.waiting):not(.welcome) > #welcome,
+body:not(.screen) > #screen,
 body:not(.heat) > header,
 body:not(.heat) > main,
 body:not(.heat) > footer {
@@ -13,6 +15,38 @@ body:not(.heat) > footer {
 }
 body:not(.heat) {
     grid-template-rows: 1fr;
+}
+
+/* ================= SCREEN WITH TITLE AND TEXT ================= */
+#screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(4 * var(--u));
+    min-height: 0;
+    overflow: hidden;
+    text-align: center;
+}
+#screen img {
+    flex: none;
+    height: calc(22 * var(--u));
+}
+#screen h1 {
+    max-width: 100%;
+    margin: 0;
+    font-size: calc(10 * var(--u));
+    white-space: nowrap;
+    overflow: hidden;
+}
+/* several lines are possible; the text shrinks until it fits */
+#screenText {
+    max-width: 100%;
+    min-height: 0;
+    font-size: calc(6 * var(--u));
+    line-height: 1.25;
+    white-space: pre-line;
+    overflow: hidden;
 }
 
 /* ================= WELCOME SCREEN ================= */

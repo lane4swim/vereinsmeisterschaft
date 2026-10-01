@@ -79,6 +79,10 @@ function show(state) {
   document.getElementById("welcomeNextHeat").textContent = state.upcoming ?? "";
   if (state.view == "heat")
     showHeat(state.heat, state.next);
+  if (state.view == "screen") {
+    document.getElementById("screenTitle").textContent = state.screen.title;
+    document.getElementById("screenText").textContent = state.screen.text;
+  }
   fitAllText();
   showCursor();
 }
@@ -131,7 +135,7 @@ function fitText(element) {
   let size = shrink(element, base, base * 0.7, () => element.scrollWidth > element.clientWidth);
   if (element.scrollWidth <= element.clientWidth)
     return;
-  if (!element.matches("td.name, td.club, header h1")) {
+  if (!element.matches("td.name, td.club, header h1, #screenTitle")) {
     shrink(element, size, base * 0.5, () => element.scrollWidth > element.clientWidth);
     return;
   }
@@ -151,7 +155,23 @@ function shrink(element, size, min, tooBig) {
   return size;
 }
 function fitAllText() {
-  document.querySelectorAll("header h1, td, #next, #welcomeName, #welcomeNextHeat").forEach(fitText);
+  document.querySelectorAll("header h1, td, #next, #welcomeName, #welcomeNextHeat, #screenTitle")
+    .forEach(fitText);
+  fitBlock(document.getElementById("screenText"));
+}
+// Text with several lines on a screen: shrink it until it fits in the
+// height left below logo and title (and no line is wider than the screen).
+function fitBlock(element) {
+  element.style.fontSize = "";
+  if (!document.body.classList.contains("screen"))
+    return;
+  let size = parseFloat(getComputedStyle(element).fontSize);
+  let min = size * 0.3;
+  while ((element.scrollHeight > element.clientHeight + 1 || element.scrollWidth > element.clientWidth)
+         && size > min) {
+    size *= 0.92;
+    element.style.fontSize = `${size}px`;
+  }
 }
 
 /* ================= KEYS =================  */

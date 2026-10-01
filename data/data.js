@@ -28,6 +28,12 @@ const json = {
         }
       }
     }
-  }
+  },
+  /* optional: screens with title and text between the heats, shown with
+     "Weiter"; without "after" a screen comes before the first heat.
+     The control window can add and change them and save everything. */
+  "screens": [
+    { "after": { "competition": "1", "heat": "1" }, "title": "Pause", "text": "Weiter um 12:30 Uhr" }
+  ]
 };
 /* ================= END DATA SECTION =================  */

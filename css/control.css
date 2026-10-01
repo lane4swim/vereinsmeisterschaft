@@ -427,3 +427,109 @@ kbd {
     font-size: 0.65em;
     color: #444;
 }
+/* saving */
+#save {
+    padding: 0.4em 1em;
+    border: 2px solid #ffffff;
+    border-radius: 0.3em;
+    background: #ffffff;
+    color: #373f94;
+    font-weight: bold;
+}
+#unsaved[hidden],
+#messageBar[hidden] {
+    display: none;
+}
+/* spontaneous screen on the display */
+#messageBar {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    padding: 0.6em 1em;
+    border-radius: 0.4em;
+    background: #f2b705;
+    font-size: 1.1em;
+}
+#messageBar button {
+    margin-left: auto;
+    padding: 0.3em 0.8em;
+    border: 2px solid #000000;
+    border-radius: 0.3em;
+    background: #ffffff;
+    font-weight: bold;
+}
+/* additional screens in the running order */
+.competition .screen {
+    display: block;
+    width: 100%;
+    margin: 0.3em 0;
+    padding: 0.3em 0.6em;
+    border: 1px dashed #373f94;
+    border-radius: 0.3em;
+    background: #ffffff;
+    color: #373f94;
+    text-align: left;
+    font-style: italic;
+}
+.competition .screen.current {
+    background: #373f94;
+    color: #ffffff;
+}
+.competition .screen.resume {
+    border: 2px dashed #373f94;
+    font-weight: bold;
+}
+.preview .screenText,
+#announcer .screenText {
+    white-space: pre-line;
+    margin-bottom: 0.4em;
+}
+#announcer .following {
+    margin-top: 0.6em;
+    font-size: 0.65em;
+    color: #444;
+}
+/* editor for screens */
+#screenEditor {
+    padding: 0.6em 0.8em;
+    border: 1px solid #ccc;
+    border-radius: 0.4em;
+}
+#screenEditor summary {
+    font-weight: bold;
+    cursor: pointer;
+}
+#screenEditor label {
+    display: flex;
+    gap: 0.5em;
+    margin-top: 0.6em;
+}
+#screenEditor input,
+#screenEditor textarea {
+    flex: 1;
+    font: inherit;
+}
+#screenEditor .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-top: 0.6em;
+}
+#screenEditor .actions button {
+    padding: 0.3em 0.8em;
+    border: 2px solid #373f94;
+    border-radius: 0.3em;
+    background: #ffffff;
+    color: #373f94;
+}
+#screenEditor .actions button:disabled {
+    opacity: 0.4;
+}
+#screenEditor .actions button[hidden] {
+    display: none;
+}
+#screenEditor .hint {
+    margin: 0.6em 0 0;
+    font-size: 0.85em;
+    color: #555;
+}

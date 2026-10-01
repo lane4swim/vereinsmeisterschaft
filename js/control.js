@@ -2,11 +2,18 @@
    The operator's window (index.html). It holds the data and the current
    position and tells the display window (display.html) what to show. */
 let data = null;
-let heatList = [];      // all heats in running order, see buildHeatList()
-// "welcome": the welcome screen is shown and `index` is the heat that
-// follows it (heatList.length after the last heat); "heat": heat `index`
+// The running order: heats ({ kind: "heat" }) and additional screens
+// ({ kind: "screen", title, text }), see buildProgram().
+let program = [];
+// "welcome": the welcome screen is shown and `index` is the entry that
+// follows it (program.length after the last one); "item": entry `index`
 // is shown.
 let position = { view: "welcome", index: 0 };
+// A spontaneous screen ({ title, text }) shown on top of the running order
+// until it is hidden again; null if there is none.
+let message = null;
+// screens were changed since the data was loaded or saved
+let unsaved = false;
 
 // whether the TV table has a club column; remembered for the next start
 let showClub = loadSetting("showClub") == "true";
@@ -38,9 +45,17 @@ function init() {
   document.getElementById("csvEventName").value = loadSetting("csvEventName") ?? "";
   onClick("loadSample", loadSample);
   onClick("openDisplay", openDisplay);
+  onClick("save", saveDataFile);
   onClick("back", retreat);
   onClick("forward", advance);
   onClick("welcomeBreak", welcomeBreak);
+  onClick("hideMessage", hideMessage);
+  onClick("screenShow", showMessage);
+  onClick("screenInsert", insertScreen);
+  onClick("screenChange", changeScreen);
+  onClick("screenEarlier", () => moveScreen(-1));
+  onClick("screenLater", () => moveScreen(1));
+  onClick("screenDelete", deleteScreen);
   let announcerBox = document.getElementById("announcerMode");
   announcerBox.checked = announcerMode;
   announcerBox.addEventListener("change", () => {
@@ -56,6 +71,9 @@ function init() {
     update();
   });
   document.addEventListener("keydown", event => {
+    // typing a screen text must not move through the running order
+    if (event.target.closest?.("input, textarea"))
+      return;
     if (handleKey(event.key, event))
       event.preventDefault();
   });
@@ -75,13 +93,14 @@ function updateClock() {
     new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
   updateSchedule();
 }
-// Planned start of the heat on the display (or, on the welcome screen, of
-// the heat that follows) compared with the clock: how far the event is
-// ahead of or behind the plan. Differences of more than 3 hours (e.g. when
-// testing on another day) are not shown as a deviation.
+// Planned start of the heat on the display (or, on the welcome screen and
+// additional screens, of the heat that follows) compared with the clock:
+// how far the event is ahead of or behind the plan. Differences of more than
+// 3 hours (e.g. when testing on another day) are not shown as a deviation.
 function updateSchedule() {
   let element = document.getElementById("schedule");
-  let heat = data && heatList[position.index];
+  let showsHeat = position.view == "item" && program[position.index]?.kind == "heat" && !message;
+  let heat = data && nextHeat(position.index);
   if (!heat?.plannedStart) {
     element.hidden = true;
     return;
@@ -98,7 +117,7 @@ function updateSchedule() {
     else
       [state, text] = ["ok", "im Zeitplan"];
   }
-  let label = position.view == "welcome" ? "nächster Lauf geplant" : "Lauf geplant";
+  let label = showsHeat ? "Lauf geplant" : "nächster Lauf geplant";
   element.innerHTML = `<div><span class="label"></span> <b></b></div><span class="pill"></span>`;
   element.querySelector(".label").textContent = label;
   element.querySelector("b").textContent = heat.plannedStart;
@@ -147,7 +166,7 @@ function readDataFile(file, input) {
 // break otherwise)
 function decodeText(buffer) {
   try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(buffer).replace(/^\uFEFF/, "");
+    return new TextDecoder("utf-8", { fatal: true }).decode(buffer).replace(/^﻿/, "");
   } catch (e) {
     return new TextDecoder("windows-1252").decode(buffer);
   }
@@ -174,19 +193,48 @@ function showUploadError(message) {
 function start(newData, isSample = false) {
   data = newData;
   document.getElementById("demoBadge").hidden = !isSample;
-  heatList = buildHeatList(data);
+  program = buildProgram(data);
   position = { view: "welcome", index: 0 };
+  message = null;
+  setUnsaved(false);
   showUploadError("");
   document.title = `Regie – ${data.competition}`;
   document.getElementById("eventName").textContent = data.competition;
-  buildHeatListView();
+  buildProgramView();
   document.body.classList.add("loaded");
   update();
   updateStatus();
 }
 
+/* ================= SAVING =================  */
+// The start list with all additional screens as a JSON file (a download),
+// which can be loaded again like any data file.
+function saveDataFile() {
+  data.screens = screensOf(program);
+  if (data.screens.length == 0)
+    delete data.screens;
+  let blob = new Blob([JSON.stringify(data, null, 2) + "\n"], { type: "application/json" });
+  let link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  let name = data.competition.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "");
+  link.download = `${name || "startliste"}.json`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  setUnsaved(false);
+}
+function setUnsaved(value) {
+  unsaved = value;
+  document.getElementById("unsaved").hidden = !value;
+}
+
 /* ================= NAVIGATION =================  */
+// While a spontaneous screen is shown, "Weiter" and "Zurück" only hide it
+// and return to the running order where it was.
 function advance() {
+  if (message)
+    return hideMessage();
   let next = nextPosition();
   if (!next)
     return;
@@ -194,11 +242,13 @@ function advance() {
   update();
 }
 function retreat() {
+  if (message)
+    return hideMessage();
   if (position.view == "welcome") {
-    // back to the heat that was shown before the welcome screen
+    // back to the entry that was shown before the welcome screen
     if (position.index == 0)
       return;
-    position = { view: "heat", index: position.index - 1 };
+    position = { view: "item", index: position.index - 1 };
   } else if (position.index == 0) {
     position.view = "welcome";
   } else {
@@ -207,27 +257,32 @@ function retreat() {
   update();
 }
 // Show the welcome screen (e.g. during a break); "Weiter" then continues
-// with the heat after the one that was shown.
+// with the entry after the one that was shown.
 function welcomeBreak() {
-  if (position.view == "welcome")
-    return;
-  position = { view: "welcome", index: position.index + 1 };
+  message = null;
+  if (position.view == "item")
+    position = { view: "welcome", index: position.index + 1 };
   update();
 }
 function jumpTo(index) {
-  position = { view: "heat", index };
+  message = null;
+  position = { view: "item", index };
   update();
 }
-// What "Weiter" would show next: after the last heat the welcome screen,
+// What "Weiter" would show next: after the last entry the welcome screen,
 // after that nothing (null).
 function nextPosition() {
-  if (position.view == "heat")
-    return position.index < heatList.length - 1
-      ? { view: "heat", index: position.index + 1 }
-      : { view: "welcome", index: heatList.length };
-  if (position.index < heatList.length)
-    return { view: "heat", index: position.index };
+  if (position.view == "item")
+    return position.index < program.length - 1
+      ? { view: "item", index: position.index + 1 }
+      : { view: "welcome", index: program.length };
+  if (position.index < program.length)
+    return { view: "item", index: position.index };
   return null;
+}
+// The first heat at or after entry `index` of the running order
+function nextHeat(index) {
+  return program.slice(index).find(item => item.kind == "heat");
 }
 
 // Arrow keys, Page Up/Down and space are also what presentation clickers send.
@@ -244,9 +299,106 @@ function handleKey(key, event) {
     welcomeBreak();
   else if (key == "s" || key == "S")
     setAnnouncerMode(!announcerMode);
+  else if (key == "Escape" && message)
+    hideMessage();
   else
     return false;
   return true;
+}
+
+/* ================= ADDITIONAL SCREENS =================  */
+function screenFields() {
+  let title = document.getElementById("screenTitle").value.trim();
+  let text = document.getElementById("screenText").value.trim();
+  if (title == "") {
+    showNotice("Bitte einen Titel für den Bildschirm eingeben.");
+    document.getElementById("screenTitle").focus();
+    return null;
+  }
+  return { title, text };
+}
+// spontaneous screen, not part of the running order
+function showMessage() {
+  let fields = screenFields();
+  if (!fields)
+    return;
+  message = fields;
+  update();
+}
+function hideMessage() {
+  message = null;
+  // the fields held the spontaneous text; show the current screen again
+  fieldsShowScreen = null;
+  update();
+}
+// new screen in the running order after the entry on the display (on the
+// welcome screen: before the entry that follows it)
+function insertScreen() {
+  let fields = screenFields();
+  if (!fields)
+    return;
+  let at = position.view == "item" ? position.index + 1 : position.index;
+  program.splice(at, 0, { kind: "screen", ...fields });
+  programChanged();
+}
+// the additional screen on the display: change, move or delete it
+function currentScreen() {
+  let item = position.view == "item" && program[position.index];
+  return item?.kind == "screen" ? item : null;
+}
+function changeScreen() {
+  let screen = currentScreen();
+  let fields = screen && screenFields();
+  if (!fields)
+    return;
+  Object.assign(screen, fields);
+  programChanged();
+}
+// one entry earlier or later; the screen stays on the display
+function moveScreen(step) {
+  let to = position.index + step;
+  if (!currentScreen() || to < 0 || to >= program.length)
+    return;
+  [program[position.index], program[to]] = [program[to], program[position.index]];
+  position.index = to;
+  programChanged();
+}
+function deleteScreen() {
+  let screen = currentScreen();
+  if (!screen || !confirm(`Bildschirm „${screen.title}“ löschen?`))
+    return;
+  program.splice(position.index, 1);
+  // the display shows what came after the deleted screen
+  position = position.index < program.length
+    ? { view: "item", index: position.index }
+    : { view: "welcome", index: program.length };
+  programChanged();
+}
+function programChanged() {
+  setUnsaved(true);
+  buildProgramView();
+  update();
+}
+// The fields show the screen on the display, so it can be changed; for
+// anything else they are left as they are (for a new screen).
+let fieldsShowScreen = null;
+function updateEditor() {
+  let screen = currentScreen();
+  document.getElementById("screenEditor").classList.toggle("editing", !!screen);
+  for (const id of ["screenChange", "screenEarlier", "screenLater", "screenDelete"])
+    document.getElementById(id).hidden = !screen;
+  if (screen && screen !== fieldsShowScreen) {
+    document.getElementById("screenTitle").value = screen.title;
+    document.getElementById("screenText").value = screen.text;
+  }
+  fieldsShowScreen = screen;
+  if (screen)
+    document.getElementById("screenChange").textContent = `Bildschirm „${screen.title}“ ändern`;
+  document.getElementById("screenEarlier").disabled = !screen || position.index == 0;
+  document.getElementById("screenLater").disabled = !screen || position.index == program.length - 1;
+  document.getElementById("messageBar").hidden = !message;
+  if (message)
+    document.getElementById("messageTitle").textContent = message.title;
 }
 
 /* ================= CONTROL WINDOW VIEW =================  */
@@ -254,26 +406,35 @@ function update() {
   updateSchedule();
   sendState();
   renderAnnouncer();
-  renderPreview(document.getElementById("nowView"), position);
-  renderPreview(document.getElementById("nextView"), nextPosition());
+  renderPreview(document.getElementById("nowView"), message ? { view: "message" } : position);
+  renderPreview(document.getElementById("nextView"), message ? position : nextPosition());
+  document.getElementById("nowTitle").textContent =
+    message ? "Jetzt auf der Anzeige: sofort angezeigter Text" : "Jetzt auf der Anzeige";
+  document.getElementById("nextTitle").textContent =
+    message ? "Danach wieder (Weiter)" : "Als Nächstes";
   let atWelcome = position.view == "welcome";
-  document.getElementById("back").disabled = atWelcome && position.index == 0;
-  document.getElementById("forward").disabled = !nextPosition();
-  document.getElementById("welcomeBreak").disabled = atWelcome;
-  let resume = heatList[atWelcome ? position.index : position.index + 1];
+  document.getElementById("back").disabled = !message && atWelcome && position.index == 0;
+  document.getElementById("forward").disabled = !message && !nextPosition();
+  document.getElementById("welcomeBreak").disabled = !message && atWelcome;
+  let resume = program[atWelcome ? position.index : position.index + 1];
   document.getElementById("welcomeResume").textContent = resume
-    ? `danach weiter mit WK ${resume.competitionId} · Lauf ${resume.heatId}`
-    : "Ende der Startliste";
-  // mark the shown heat, or the heat that follows the welcome screen
-  document.querySelectorAll("#heatList .heat").forEach(button => {
+    ? `danach weiter mit ${shortTitle(resume)}` : "Ende der Startliste";
+  // mark the shown entry, or the entry that follows the welcome screen
+  document.querySelectorAll("#heatList [data-index]").forEach(button => {
     let index = Number(button.dataset.index);
     button.classList.toggle("current", !atWelcome && index == position.index);
     button.classList.toggle("resume", atWelcome && index == position.index);
   });
   scrollHeatList(document.querySelector("#heatList .current, #heatList .resume"));
+  updateEditor();
+}
+// "WK 2 · Lauf 3" or "Bildschirm „Siegerehrung“"
+function shortTitle(item) {
+  return item.kind == "heat" ? `WK ${item.competitionId} · Lauf ${item.heatId}`
+    : `Bildschirm „${item.title}“`;
 }
 // Scroll only the heat list (not the page, which scrollIntoView would also
-// do) so that the marked heat is visible.
+// do) so that the marked entry is visible.
 function scrollHeatList(button) {
   if (!button)
     return;
@@ -293,7 +454,8 @@ function setAnnouncerMode(on) {
 }
 // The current heat in large print for the announcer: names in the order
 // they are read out ("Max Mustermann"), with club, year of birth and entry
-// time. During a break (welcome screen) the heat that follows is shown.
+// time. On the welcome screen and on additional screens, what the display
+// shows is named and the heat that follows is shown.
 function renderAnnouncer() {
   let element = document.getElementById("announcer");
   element.hidden = !announcerMode;
@@ -301,24 +463,35 @@ function renderAnnouncer() {
   if (!announcerMode || !data)
     return;
   element.innerHTML = "";
+  let item = position.view == "item" && !message ? program[position.index] : null;
   let heading = document.createElement("h2");
-  let atWelcome = position.view == "welcome";
-  let heat = heatList[position.index];
-  if (atWelcome && !heat) {
-    heading.textContent = "Begrüßung auf der Anzeige · Ende der Startliste";
-    element.append(heading);
-    return;
+  element.append(heading);
+  if (message || item?.kind == "screen") {
+    let screen = message ?? item;
+    heading.textContent = message ? "Auf der Anzeige: sofort angezeigter Text" : "Auf der Anzeige: Bildschirm";
+    element.append(textBlock("title", screen.title), textBlock("screenText", screen.text));
   }
-  heading.textContent = !atWelcome ? "Aktueller Lauf"
-    : position.index == 0 ? "Begrüßung auf der Anzeige · es beginnt mit"
-    : "Begrüßung auf der Anzeige · als Nächstes";
-  let title = document.createElement("div");
-  title.className = "title";
-  title.textContent = heatTitle(heat);
-  let sub = document.createElement("div");
-  sub.className = "sub";
-  sub.textContent = `Lauf ${heat.heatId} von ${heat.heatCount}`
-    + (heat.plannedStart ? ` · geplant ${heat.plannedStart} Uhr` : "");
+  // the heat on the display, or the one that comes next (after a spontaneous
+  // screen: the heat it covers)
+  let heat = item?.kind == "heat" ? item
+    : nextHeat(position.view == "item" && !message ? position.index + 1 : position.index);
+  if (!item?.kind || item.kind == "screen" || message) {
+    if (!heat) {
+      if (!message && item?.kind != "screen")
+        heading.textContent = "Begrüßung auf der Anzeige · Ende der Startliste";
+      return;
+    }
+    if (!message && item?.kind != "screen")
+      heading.textContent = position.index == 0 ? "Begrüßung auf der Anzeige · es beginnt mit"
+        : "Begrüßung auf der Anzeige · als Nächstes";
+    else
+      element.append(textBlock("following", "Als nächster Lauf:"));
+  } else {
+    heading.textContent = "Aktueller Lauf";
+  }
+  element.append(textBlock("title", heatTitle(heat)),
+    textBlock("sub", `Lauf ${heat.heatId} von ${heat.heatCount}`
+      + (heat.plannedStart ? ` · geplant ${heat.plannedStart} Uhr` : "")));
   let table = document.createElement("table");
   let head = table.createTHead().insertRow();
   for (const text of ["Bahn", "Name", "Verein", "Jg.", "Meldezeit"])
@@ -336,19 +509,25 @@ function renderAnnouncer() {
       row.insertCell().textContent = text;
     row.lastChild.classList.toggle("missing", !!swimmer && !swimmer.time);
   }
-  element.append(heading, title, sub, table);
-  // what comes after this heat, as a short line
-  let after = atWelcome ? heat : heatList[position.index + 1];
-  if (!atWelcome) {
-    let next = document.createElement("p");
-    next.className = "after";
-    next.textContent = after ? `Danach: ${heatTitle(after)} · Lauf ${after.heatId}`
-      : "Danach: Ende der Startliste";
-    element.append(next);
+  element.append(table);
+  // what comes after the current heat, as a short line
+  if (item?.kind == "heat" && !message) {
+    let after = program[position.index + 1];
+    element.append(textBlock("after", after ? `Danach: ${longTitle(after)}` : "Danach: Ende der Startliste"));
   }
+}
+function textBlock(className, text) {
+  let element = document.createElement("div");
+  element.className = className;
+  element.textContent = text;
+  return element;
 }
 function heatTitle(heat) {
   return `Wettkampf ${heat.competitionId} – ${heat.competitionName}`;
+}
+// "Wettkampf 2 – 100m Brust weiblich · Lauf 3" or "Bildschirm „Pause“"
+function longTitle(item) {
+  return item.kind == "heat" ? `${heatTitle(item)} · Lauf ${item.heatId}` : `Bildschirm „${item.title}“`;
 }
 function renderPreview(element, pos) {
   element.innerHTML = "";
@@ -360,20 +539,19 @@ function renderPreview(element, pos) {
     element.innerHTML = `<div class="welcomePreview"><img src="img/logo.jpg" alt="">`
       + `<div class="title"></div><div class="sub"></div></div>`;
     element.querySelector(".title").textContent = data.competition;
-    element.querySelector(".sub").textContent = pos.index >= heatList.length
+    let hint = upcomingHint(pos);
+    element.querySelector(".sub").textContent = pos.index >= program.length
       ? "Begrüßung · Ende der Startliste"
-      : pos.index > 0 ? `Begrüßung · mit Hinweis auf WK ${heatList[pos.index].competitionId}, `
-        + `Lauf ${heatList[pos.index].heatId}` : "Begrüßung";
+      : hint ? `Begrüßung · mit Hinweis auf ${hint}` : "Begrüßung";
     return;
   }
-  let heat = heatList[pos.index];
-  let title = document.createElement("div");
-  title.className = "title";
-  title.textContent = heatTitle(heat);
-  let sub = document.createElement("div");
-  sub.className = "sub";
-  sub.textContent = `Lauf ${heat.heatId}/${heat.heatCount}`
-    + (heat.plannedStart ? ` · geplant ${heat.plannedStart} Uhr` : "");
+  let item = pos.view == "message" ? message : program[pos.index];
+  if (pos.view == "message" || item.kind == "screen") {
+    element.append(textBlock("title", item.title), textBlock("screenText", item.text),
+      textBlock("sub", pos.view == "message" ? "sofort angezeigt, nicht im Ablauf" : "Bildschirm im Ablauf"));
+    return;
+  }
+  let heat = item;
   let table = document.createElement("table");
   let [first, last] = laneRange(data.lanes);
   for (let lane = first; lane <= last; ++lane) {
@@ -388,41 +566,56 @@ function renderPreview(element, pos) {
     // an athlete without entry time gets a greyed out dash
     row.lastChild.classList.toggle("missing", !!swimmer && !swimmer.time);
   }
-  element.append(title, sub, table);
+  element.append(textBlock("title", heatTitle(heat)),
+    textBlock("sub", `Lauf ${heat.heatId}/${heat.heatCount}`
+      + (heat.plannedStart ? ` · geplant ${heat.plannedStart} Uhr` : "")), table);
 }
-// All heats grouped by competition; a click on a heat shows it right away,
-// a click on the competition shows its first heat.
-function buildHeatListView() {
+// The running order grouped by competition; a click on a heat or screen
+// shows it right away, a click on a competition shows its first heat.
+// Screens appear between the heats.
+function buildProgramView() {
   let list = document.getElementById("heatList");
   list.innerHTML = "";
   let group = null;
-  heatList.forEach((heat, index) => {
-    if (heat.heatIndex == 0) {
-      group = document.createElement("div");
-      group.className = "competition";
+  let newGroup = () => {
+    group = document.createElement("div");
+    group.className = "competition";
+    list.appendChild(group);
+  };
+  program.forEach((item, index) => {
+    let jump = event => {
+      event.currentTarget.blur();
+      jumpTo(index);
+    };
+    if (item.kind == "screen") {
+      if (!group)
+        newGroup();
+      let button = document.createElement("button");
+      button.className = "screen";
+      button.dataset.index = index;
+      button.textContent = `▸ ${item.title}`;
+      button.addEventListener("click", jump);
+      group.appendChild(button);
+      return;
+    }
+    if (item.heatIndex == 0) {
+      newGroup();
       let title = document.createElement("button");
       title.className = "title";
-      title.textContent = heatTitle(heat);
-      title.addEventListener("click", event => {
-        event.currentTarget.blur();
-        jumpTo(index);
-      });
+      title.textContent = heatTitle(item);
+      title.addEventListener("click", jump);
       group.appendChild(title);
-      list.appendChild(group);
     }
     let button = document.createElement("button");
     button.className = "heat";
     button.dataset.index = index;
-    button.textContent = `Lauf ${heat.heatId}`;
-    if (heat.plannedStart) {
+    button.textContent = `Lauf ${item.heatId}`;
+    if (item.plannedStart) {
       let time = document.createElement("small");
-      time.textContent = heat.plannedStart;
+      time.textContent = item.plannedStart;
       button.append(time);
     }
-    button.addEventListener("click", event => {
-      event.currentTarget.blur();
-      jumpTo(index);
-    });
+    button.addEventListener("click", jump);
     group.appendChild(button);
   });
 }
@@ -456,33 +649,36 @@ async function openDisplay() {
 // On a welcome screen in the middle of the event (a break), the heat that
 // follows, e.g. "Wettkampf 11 – 50m Freistil männlich · Lauf 1"; nothing
 // before the first and after the last heat.
-function upcomingHint() {
-  if (position.view != "welcome" || position.index == 0 || position.index >= heatList.length)
+function upcomingHint(pos = position) {
+  if (pos.view != "welcome" || pos.index == 0)
     return null;
-  let heat = heatList[position.index];
-  return `${heatTitle(heat)} · Lauf ${heat.heatId}`;
+  let heat = nextHeat(pos.index);
+  return heat ? `${heatTitle(heat)} · Lauf ${heat.heatId}` : null;
 }
 function sendState() {
   if (!data || !displayWindow || displayWindow.closed)
     return;
+  let item = position.view == "item" ? program[position.index] : null;
+  let screen = message ?? (item?.kind == "screen" ? item : null);
+  let view = screen ? "screen" : item ? "heat" : "welcome";
   let next = null;
-  if (position.view == "heat") {
-    let current = heatList[position.index];
-    let following = heatList.slice(position.index + 1)
-      .find(heat => heat.competitionId != current.competitionId);
+  if (view == "heat") {
+    let following = program.slice(position.index + 1)
+      .find(other => other.kind == "heat" && other.competitionId != item.competitionId);
     if (following)
       next = heatTitle(following);
   }
   displayWindow.postMessage({
     app: "vm",
     type: "state",
-    upcoming: upcomingHint(),
+    upcoming: view == "welcome" ? upcomingHint() : null,
     version: APP_VERSION,
     event: data.competition,
     lanes: data.lanes,
     showClub,
-    view: position.view,
-    heat: position.view == "heat" ? heatList[position.index] : null,
+    view,
+    heat: view == "heat" ? item : null,
+    screen: screen ? { title: screen.title, text: screen.text } : null,
     next,
   }, "*");
 }

@@ -32,6 +32,8 @@
     <div id="schedule" hidden></div>
     <h1 id="eventName"></h1>
     <span id="demoBadge" class="pill warn" hidden>Beispieldaten</span>
+    <span id="unsaved" class="pill warn" hidden>ungespeicherte Änderungen</span>
+    <button id="save" title="Startliste mit allen Bildschirmen als JSON-Datei speichern">Speichern</button>
     <div id="status">
      <span id="stDisplay" class="pill"></span>
      <span id="stFullscreen" class="pill"></span>
@@ -41,14 +43,18 @@
    </header>
    <nav id="heatList" aria-label="Alle Läufe"></nav>
    <main>
+    <div id="messageBar" hidden>
+     Auf der Anzeige: sofort angezeigter Text „<b id="messageTitle"></b>“
+     <button id="hideMessage">Ausblenden (Esc)</button>
+    </div>
     <section id="announcer" class="panel" hidden></section>
     <div id="panels">
      <section class="panel" id="nowPanel">
-      <h2>Jetzt auf der Anzeige</h2>
+      <h2 id="nowTitle">Jetzt auf der Anzeige</h2>
       <div id="nowView" class="preview"></div>
      </section>
      <section class="panel" id="nextPanel">
-      <h2>Als Nächstes <small>(Weiter)</small></h2>
+      <h2><span id="nextTitle">Als Nächstes</span> <small>(Weiter)</small></h2>
       <div id="nextView" class="preview"></div>
      </section>
     </div>
@@ -65,6 +71,24 @@
       <input type="checkbox" id="showClub"> Verein in der Tabelle auf der Anzeige zeigen
      </label>
     </div>
+    <details id="screenEditor">
+     <summary>Bildschirme mit eigenem Text</summary>
+     <label>Titel <input type="text" id="screenTitle" placeholder="z. B. Siegerehrung"></label>
+     <label>Text <textarea id="screenText" rows="3" placeholder="optional, mehrere Zeilen möglich"></textarea></label>
+     <div class="actions">
+      <button id="screenShow">Sofort anzeigen</button>
+      <button id="screenInsert">In Ablauf einfügen (nach dem aktuellen Eintrag)</button>
+     </div>
+     <div class="actions" id="screenCurrent">
+      <button id="screenChange" hidden>Bildschirm ändern</button>
+      <button id="screenEarlier" hidden>&#9650; früher</button>
+      <button id="screenLater" hidden>&#9660; später</button>
+      <button id="screenDelete" hidden>Löschen</button>
+     </div>
+     <p class="hint">Bildschirme im Ablauf werden mit „Weiter“ angezeigt. „Sofort anzeigen“ zeigt den
+      Text nur jetzt, ohne ihn in den Ablauf aufzunehmen. Mit „Speichern“ werden Startliste und
+      Bildschirme als JSON-Datei gesichert, die später wieder geladen werden kann.</p>
+    </details>
     <p id="keyHelp">
      <kbd>→</kbd> / <kbd>Leertaste</kbd> weiter &middot; <kbd>←</kbd> zurück &middot;
      <kbd>B</kbd> Begrüßung, danach nächster Lauf &middot; <kbd>S</kbd> Sprecheransicht &middot;
