@@ -5,7 +5,7 @@
 // Program version, shared by both windows. Change it with every update of
 // the program: a display window that was opened with an older version then
 // notices the difference and reloads itself (see display.js).
-const APP_VERSION = "2026-10-01.6";
+const APP_VERSION = "2026-10-01.7";
 
 // Accepts the format of data/data.js (`const json = {...};` with comments
 // and trailing commas) as well as plain JSON. The file is parsed, not executed.
@@ -116,6 +116,7 @@ function athleteMap(list) {
         + '(erwartet z. B. "1970-05-12", "12.05.1970" oder "1970")');
     athletes.set(id, {
       name,
+      spokenName: spokenName(athlete),
       born: year,
       club: typeof athlete.club == "string" ? athlete.club : "",
     });
@@ -128,6 +129,14 @@ function displayName(athlete) {
   let [last, first] = [text(athlete.lastName), text(athlete.firstName)];
   if (last != "")
     return first != "" ? `${last}, ${first}` : last;
+  return text(athlete.name);
+}
+// "Max Mustermann", the order in which the announcer reads the name
+function spokenName(athlete) {
+  let text = value => typeof value == "string" ? value.trim() : "";
+  let [last, first] = [text(athlete.lastName), text(athlete.firstName)];
+  if (last != "")
+    return `${first} ${last}`.trim();
   return text(athlete.name);
 }
 // The year of birth ("Jahrgang") shown on the display; "" if not given.

@@ -350,3 +350,80 @@ kbd {
 .competition .heat.current small {
     color: #dde0f5;
 }
+/* options below the buttons */
+#options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em 2em;
+}
+#options label {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    cursor: pointer;
+}
+#options input {
+    width: 1.2em;
+    height: 1.2em;
+}
+/* announcer view: the current heat in large print */
+#announcer {
+    border: 3px solid #373f94;
+    /* as large as the window height allows, so the buttons stay visible */
+    font-size: clamp(15px, 2.7vh, 30px);
+}
+#announcer[hidden],
+#panels[hidden] {
+    display: none;
+}
+#announcer h2 {
+    font-size: 0.6em;
+}
+#announcer .title {
+    font-size: 1.1em;
+    font-weight: bold;
+}
+#announcer .sub {
+    margin-bottom: 0.4em;
+    font-size: 0.8em;
+    color: #444;
+}
+#announcer table {
+    width: 100%;
+    /* tables do not inherit the font size without a doctype */
+    font-size: inherit;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+#announcer th {
+    padding: 0.2em 0.4em;
+    font-size: 0.6em;
+    color: #555;
+    text-align: left;
+}
+#announcer td {
+    padding: 0.3em 0.4em;
+    border-top: 1px solid #ccc;
+}
+#announcer td:first-child,
+#announcer th:first-child {
+    width: 2.5em;
+    text-align: center;
+    font-weight: bold;
+}
+#announcer td:nth-child(2) {
+    font-weight: bold;
+}
+#announcer td:nth-child(3) {
+    font-size: 0.75em;
+}
+#announcer tr.empty td,
+#announcer td.missing {
+    color: #aaa;
+    font-weight: normal;
+}
+#announcer .after {
+    margin: 0.6em 0 0;
+    font-size: 0.65em;
+    color: #444;
+}

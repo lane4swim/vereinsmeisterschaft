@@ -10,6 +10,8 @@ let position = { view: "welcome", index: 0 };
 
 // whether the TV table has a club column; remembered for the next start
 let showClub = loadSetting("showClub") == "true";
+// large view of the current heat for the announcer; remembered as well
+let announcerMode = loadSetting("announcerMode") == "true";
 
 let displayWindow = null;
 let displayStatus = null;
@@ -39,6 +41,12 @@ function init() {
   onClick("back", retreat);
   onClick("forward", advance);
   onClick("welcomeBreak", welcomeBreak);
+  let announcerBox = document.getElementById("announcerMode");
+  announcerBox.checked = announcerMode;
+  announcerBox.addEventListener("change", () => {
+    setAnnouncerMode(announcerBox.checked);
+    announcerBox.blur();
+  });
   let clubBox = document.getElementById("showClub");
   clubBox.checked = showClub;
   clubBox.addEventListener("change", () => {
@@ -234,6 +242,8 @@ function handleKey(key, event) {
     retreat();
   else if (key == "b" || key == "B")
     welcomeBreak();
+  else if (key == "s" || key == "S")
+    setAnnouncerMode(!announcerMode);
   else
     return false;
   return true;
@@ -243,6 +253,7 @@ function handleKey(key, event) {
 function update() {
   updateSchedule();
   sendState();
+  renderAnnouncer();
   renderPreview(document.getElementById("nowView"), position);
   renderPreview(document.getElementById("nextView"), nextPosition());
   let atWelcome = position.view == "welcome";
@@ -273,6 +284,68 @@ function scrollHeatList(button) {
     list.scrollTop = top - margin;
   else if (top + button.offsetHeight + margin > list.scrollTop + list.clientHeight)
     list.scrollTop = top + button.offsetHeight + margin - list.clientHeight;
+}
+function setAnnouncerMode(on) {
+  announcerMode = on;
+  saveSetting("announcerMode", on);
+  document.getElementById("announcerMode").checked = on;
+  renderAnnouncer();
+}
+// The current heat in large print for the announcer: names in the order
+// they are read out ("Max Mustermann"), with club, year of birth and entry
+// time. During a break (welcome screen) the heat that follows is shown.
+function renderAnnouncer() {
+  let element = document.getElementById("announcer");
+  element.hidden = !announcerMode;
+  document.getElementById("panels").hidden = announcerMode;
+  if (!announcerMode || !data)
+    return;
+  element.innerHTML = "";
+  let heading = document.createElement("h2");
+  let atWelcome = position.view == "welcome";
+  let heat = heatList[position.index];
+  if (atWelcome && !heat) {
+    heading.textContent = "Begrüßung auf der Anzeige · Ende der Startliste";
+    element.append(heading);
+    return;
+  }
+  heading.textContent = !atWelcome ? "Aktueller Lauf"
+    : position.index == 0 ? "Begrüßung auf der Anzeige · es beginnt mit"
+    : "Begrüßung auf der Anzeige · als Nächstes";
+  let title = document.createElement("div");
+  title.className = "title";
+  title.textContent = heatTitle(heat);
+  let sub = document.createElement("div");
+  sub.className = "sub";
+  sub.textContent = `Lauf ${heat.heatId} von ${heat.heatCount}`
+    + (heat.plannedStart ? ` · geplant ${heat.plannedStart} Uhr` : "");
+  let table = document.createElement("table");
+  let head = table.createTHead().insertRow();
+  for (const text of ["Bahn", "Name", "Verein", "Jg.", "Meldezeit"])
+    head.appendChild(document.createElement("th")).textContent = text;
+  let body = table.createTBody();
+  let [first, last] = laneRange(data.lanes);
+  for (let lane = first; lane <= last; ++lane) {
+    let swimmer = heat.swimmers[lane];
+    let row = body.insertRow();
+    row.classList.toggle("empty", !swimmer);
+    let texts = swimmer
+      ? [lane, swimmer.spokenName, swimmer.club, swimmer.born, swimmer.time || "–"]
+      : [lane, "frei", "", "", ""];
+    for (const text of texts)
+      row.insertCell().textContent = text;
+    row.lastChild.classList.toggle("missing", !!swimmer && !swimmer.time);
+  }
+  element.append(heading, title, sub, table);
+  // what comes after this heat, as a short line
+  let after = atWelcome ? heat : heatList[position.index + 1];
+  if (!atWelcome) {
+    let next = document.createElement("p");
+    next.className = "after";
+    next.textContent = after ? `Danach: ${heatTitle(after)} · Lauf ${after.heatId}`
+      : "Danach: Ende der Startliste";
+    element.append(next);
+  }
 }
 function heatTitle(heat) {
   return `Wettkampf ${heat.competitionId} – ${heat.competitionName}`;

@@ -41,6 +41,7 @@
    </header>
    <nav id="heatList" aria-label="Alle Läufe"></nav>
    <main>
+    <section id="announcer" class="panel" hidden></section>
     <div id="panels">
      <section class="panel" id="nowPanel">
       <h2>Jetzt auf der Anzeige</h2>
@@ -56,12 +57,17 @@
      <button id="welcomeBreak">Begrüßung zeigen<small id="welcomeResume"></small></button>
      <button id="forward">Weiter &#9654;</button>
     </div>
-    <label id="clubOption">
-     <input type="checkbox" id="showClub"> Verein in der Tabelle auf der Anzeige zeigen
-    </label>
+    <div id="options">
+     <label>
+      <input type="checkbox" id="announcerMode"> Sprecheransicht (aktueller Lauf groß, Namen in Sprechreihenfolge)
+     </label>
+     <label id="clubOption">
+      <input type="checkbox" id="showClub"> Verein in der Tabelle auf der Anzeige zeigen
+     </label>
+    </div>
     <p id="keyHelp">
      <kbd>→</kbd> / <kbd>Leertaste</kbd> weiter &middot; <kbd>←</kbd> zurück &middot;
-     <kbd>B</kbd> Begrüßung, danach nächster Lauf &middot;
+     <kbd>B</kbd> Begrüßung, danach nächster Lauf &middot; <kbd>S</kbd> Sprecheransicht &middot;
      Vollbild: auf der Anzeige klicken oder <kbd>F</kbd>
     </p>
    </main>
