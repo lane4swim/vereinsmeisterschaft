@@ -72,12 +72,17 @@
      </label>
     </div>
     <details id="screenEditor">
-     <summary>Bildschirme mit eigenem Text</summary>
+     <summary>Bildschirme mit eigenem Text und Listen</summary>
+     <label>Bearbeiten <select id="screenSelect"></select></label>
      <label>Titel <input type="text" id="screenTitle" placeholder="z. B. Siegerehrung"></label>
-     <label>Text <textarea id="screenText" rows="3" placeholder="optional, mehrere Zeilen möglich"></textarea></label>
+     <label>Text <textarea id="screenText" rows="2" placeholder="optional, mehrere Zeilen möglich"></textarea></label>
+     <label>Liste <textarea id="screenList" rows="4"
+       placeholder="optional, eine Zeile pro Eintrag: Platz; Name; Jahrgang; Zeit; Verein&#10;z. B. 1.; Mustermann, Max; 2012; 1:25,40; WSV Schermbeck"></textarea></label>
+     <label>Spaltenkopf <input type="text" id="screenLabelHeader" placeholder="Platz"></label>
      <div class="actions">
       <button id="screenShow">Sofort anzeigen</button>
-      <button id="screenInsert">In Ablauf einfügen (nach dem aktuellen Eintrag)</button>
+      <button id="screenInsert">In Ablauf einfügen</button>
+      <label class="inline">nach <select id="screenAfter"></select></label>
      </div>
      <div class="actions" id="screenCurrent">
       <button id="screenChange" hidden>Bildschirm ändern</button>
@@ -85,9 +90,10 @@
       <button id="screenLater" hidden>&#9660; später</button>
       <button id="screenDelete" hidden>Löschen</button>
      </div>
-     <p class="hint">Bildschirme im Ablauf werden mit „Weiter“ angezeigt. „Sofort anzeigen“ zeigt den
-      Text nur jetzt, ohne ihn in den Ablauf aufzunehmen. Mit „Speichern“ werden Startliste und
-      Bildschirme als JSON-Datei gesichert, die später wieder geladen werden kann.</p>
+     <p class="hint">Bildschirme im Ablauf werden mit „Weiter“ angezeigt; unter „Bearbeiten“ lässt sich
+      auch ein späterer Bildschirm ändern, ohne ihn anzuzeigen. „Sofort anzeigen“ zeigt den Bildschirm
+      nur jetzt, ohne ihn in den Ablauf aufzunehmen. Eine Liste erscheint auf der Anzeige wie ein Lauf.
+      Mit „Speichern“ werden Startliste und Bildschirme als JSON-Datei gesichert.</p>
     </details>
     <p id="keyHelp">
      <kbd>→</kbd> / <kbd>Leertaste</kbd> weiter &middot; <kbd>←</kbd> zurück &middot;

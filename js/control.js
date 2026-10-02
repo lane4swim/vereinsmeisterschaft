@@ -53,6 +53,7 @@ function init() {
   onClick("screenShow", showMessage);
   onClick("screenInsert", insertScreen);
   onClick("screenChange", changeScreen);
+  document.getElementById("screenSelect").addEventListener("change", chooseScreen);
   onClick("screenEarlier", () => moveScreen(-1));
   onClick("screenLater", () => moveScreen(1));
   onClick("screenDelete", deleteScreen);
@@ -307,71 +308,108 @@ function handleKey(key, event) {
 }
 
 /* ================= ADDITIONAL SCREENS =================  */
+// The editor works on one screen of the running order, chosen in
+// "Bearbeiten" (by default the screen on the display), or on a new one.
+// New screens are inserted after the entry chosen in "Einfügen nach".
+let editIndex = null;          // index in `program` of the edited screen
+let editFollowsDisplay = true; // editIndex follows the screen on the display
+
+// The screen described by the editor fields, or null (with a notice) if it
+// has no title. List lines: "Platz; Name; Jahrgang; Zeit; Verein".
 function screenFields() {
-  let title = document.getElementById("screenTitle").value.trim();
-  let text = document.getElementById("screenText").value.trim();
+  let value = id => document.getElementById(id).value.trim();
+  let title = value("screenTitle");
   if (title == "") {
     showNotice("Bitte einen Titel für den Bildschirm eingeben.");
     document.getElementById("screenTitle").focus();
     return null;
   }
-  return { title, text };
+  let list = value("screenList").split("\n").filter(line => line.trim() != "").map(line => {
+    let [label, name, born, time, club] = line.split(/[;\t]/).map(part => part.trim());
+    let entry = { label, name, born, time, club };
+    for (const key in entry)
+      if (!entry[key])
+        delete entry[key];
+    return entry;
+  });
+  let nameless = list.findIndex(entry => !entry.name);
+  if (nameless >= 0) {
+    showNotice(`Listenzeile ${nameless + 1} hat keinen Namen (Platz; Name; Jahrgang; Zeit; Verein).`);
+    return null;
+  }
+  return makeScreen({ title, text: value("screenText"), list, labelHeader: value("screenLabelHeader") },
+    athleteMap(data.athletes));
+}
+// the editor fields for a screen (empty for a new one)
+function fillScreenFields(screen) {
+  document.getElementById("screenTitle").value = screen?.title ?? "";
+  document.getElementById("screenText").value = screen?.text ?? "";
+  document.getElementById("screenLabelHeader").value = screen?.labelHeader ?? "";
+  document.getElementById("screenList").value = (screen?.rows ?? []).map(row =>
+    [row.label, row.name, row.born, row.time, row.club].join("; ").replace(/(; )+$/, "")).join("\n");
 }
 // spontaneous screen, not part of the running order
 function showMessage() {
-  let fields = screenFields();
-  if (!fields)
+  let screen = screenFields();
+  if (!screen)
     return;
-  message = fields;
+  message = screen;
   update();
 }
 function hideMessage() {
   message = null;
-  // the fields held the spontaneous text; show the current screen again
-  fieldsShowScreen = null;
+  // the fields held the spontaneous screen; show the edited screen again
+  fillScreenFields(program[editIndex]);
   update();
 }
-// new screen in the running order after the entry on the display (on the
-// welcome screen: before the entry that follows it)
+// new screen in the running order after the entry chosen in "Einfügen nach"
 function insertScreen() {
-  let fields = screenFields();
-  if (!fields)
+  let screen = screenFields();
+  if (!screen)
     return;
-  let at = position.view == "item" ? position.index + 1 : position.index;
-  program.splice(at, 0, { kind: "screen", ...fields });
+  let choice = document.getElementById("screenAfter").value;
+  let at = choice == "current" ? (position.view == "item" ? position.index + 1 : position.index)
+    : Number(choice) + 1;
+  program.splice(at, 0, screen);
+  // the display keeps showing the same entry
+  if (at < position.index || (at == position.index && position.view == "item"))
+    position.index++;
+  editIndex = at;
+  editFollowsDisplay = false;
   programChanged();
-}
-// the additional screen on the display: change, move or delete it
-function currentScreen() {
-  let item = position.view == "item" && program[position.index];
-  return item?.kind == "screen" ? item : null;
+  showNotice(`Bildschirm „${screen.title}“ eingefügt.`);
 }
 function changeScreen() {
-  let screen = currentScreen();
-  let fields = screen && screenFields();
-  if (!fields)
+  let screen = editIndex !== null && screenFields();
+  if (!screen)
     return;
-  Object.assign(screen, fields);
+  program[editIndex] = screen;
   programChanged();
 }
-// one entry earlier or later; the screen stays on the display
+// one entry earlier or later; the display keeps showing the same entry
 function moveScreen(step) {
-  let to = position.index + step;
-  if (!currentScreen() || to < 0 || to >= program.length)
+  let from = editIndex, to = editIndex + step;
+  if (from === null || to < 0 || to >= program.length)
     return;
-  [program[position.index], program[to]] = [program[to], program[position.index]];
-  position.index = to;
+  [program[from], program[to]] = [program[to], program[from]];
+  if (position.index == from)
+    position.index = to;
+  else if (position.index == to)
+    position.index = from;
+  editIndex = to;
   programChanged();
 }
 function deleteScreen() {
-  let screen = currentScreen();
-  if (!screen || !confirm(`Bildschirm „${screen.title}“ löschen?`))
+  let screen = program[editIndex];
+  if (editIndex === null || !confirm(`Bildschirm „${screen.title}“ löschen?`))
     return;
-  program.splice(position.index, 1);
-  // the display shows what came after the deleted screen
-  position = position.index < program.length
-    ? { view: "item", index: position.index }
-    : { view: "welcome", index: program.length };
+  program.splice(editIndex, 1);
+  if (position.index > editIndex)
+    position.index--;
+  else if (position.index == editIndex && position.view == "item" && position.index >= program.length)
+    position = { view: "welcome", index: program.length };
+  editIndex = null;
+  editFollowsDisplay = true;
   programChanged();
 }
 function programChanged() {
@@ -379,23 +417,45 @@ function programChanged() {
   buildProgramView();
   update();
 }
-// The fields show the screen on the display, so it can be changed; for
-// anything else they are left as they are (for a new screen).
-let fieldsShowScreen = null;
+// choosing a screen to edit (or "new") in "Bearbeiten"
+function chooseScreen() {
+  let choice = document.getElementById("screenSelect").value;
+  editIndex = choice == "new" ? null : Number(choice);
+  editFollowsDisplay = false;
+  fillScreenFields(program[editIndex]);
+  updateEditor();
+}
 function updateEditor() {
-  let screen = currentScreen();
-  document.getElementById("screenEditor").classList.toggle("editing", !!screen);
-  for (const id of ["screenChange", "screenEarlier", "screenLater", "screenDelete"])
-    document.getElementById(id).hidden = !screen;
-  if (screen && screen !== fieldsShowScreen) {
-    document.getElementById("screenTitle").value = screen.title;
-    document.getElementById("screenText").value = screen.text;
+  // follow the screen on the display unless another one was chosen
+  let shown = position.view == "item" && program[position.index]?.kind == "screen" ? position.index : null;
+  if (editFollowsDisplay && editIndex !== shown && !message) {
+    editIndex = shown;
+    fillScreenFields(program[editIndex]);
   }
-  fieldsShowScreen = screen;
-  if (screen)
-    document.getElementById("screenChange").textContent = `Bildschirm „${screen.title}“ ändern`;
-  document.getElementById("screenEarlier").disabled = !screen || position.index == 0;
-  document.getElementById("screenLater").disabled = !screen || position.index == program.length - 1;
+  if (program[editIndex]?.kind != "screen")
+    editIndex = null;
+  let select = document.getElementById("screenSelect");
+  let after = document.getElementById("screenAfter");
+  let afterChoice = after.value || "current";
+  select.innerHTML = "";
+  after.innerHTML = "";
+  select.add(new Option("– neuer Bildschirm –", "new"));
+  after.add(new Option("dem aktuellen Eintrag auf der Anzeige", "current"));
+  program.forEach((item, index) => {
+    if (item.kind == "screen")
+      select.add(new Option(`Bildschirm „${item.title}“${index == shown ? " (auf der Anzeige)" : ""}`, index));
+    after.add(new Option(`${shortTitle(item)}${index == shown || (item.kind == "heat"
+      && position.view == "item" && index == position.index) ? " (auf der Anzeige)" : ""}`, index));
+  });
+  select.value = editIndex === null ? "new" : editIndex;
+  after.value = afterChoice < program.length || afterChoice == "current" ? afterChoice : "current";
+  let editing = editIndex !== null;
+  for (const id of ["screenChange", "screenEarlier", "screenLater", "screenDelete"])
+    document.getElementById(id).hidden = !editing;
+  if (editing)
+    document.getElementById("screenChange").textContent = `Bildschirm „${program[editIndex].title}“ ändern`;
+  document.getElementById("screenEarlier").disabled = !editing || editIndex == 0;
+  document.getElementById("screenLater").disabled = !editing || editIndex == program.length - 1;
   document.getElementById("messageBar").hidden = !message;
   if (message)
     document.getElementById("messageTitle").textContent = message.title;
@@ -470,6 +530,25 @@ function renderAnnouncer() {
     let screen = message ?? item;
     heading.textContent = message ? "Auf der Anzeige: sofort angezeigter Text" : "Auf der Anzeige: Bildschirm";
     element.append(textBlock("title", screen.title), textBlock("screenText", screen.text));
+    if (screen.rows.length) {
+      let table = document.createElement("table");
+      let head = table.createTHead().insertRow();
+      for (const text of [screen.labelHeader || "Platz", "Name", "Verein", "Jg.", "Zeit"])
+        head.appendChild(document.createElement("th")).textContent = text;
+      let body = table.createTBody();
+      for (const entry of screen.rows) {
+        let row = body.insertRow();
+        for (const text of [entry.label, entry.spokenName, entry.club, entry.born, entry.time || "–"])
+          row.insertCell().textContent = text;
+        row.lastChild.classList.toggle("missing", !entry.time);
+      }
+      element.append(table);
+      // with a list there is no room for the next heat; just name it
+      let following = nextHeat(position.view == "item" && !message ? position.index + 1 : position.index);
+      element.append(textBlock("after", following ? `Als nächster Lauf: ${longTitle(following)}`
+        : "Danach: Ende der Startliste"));
+      return;
+    }
   }
   // the heat on the display, or the one that comes next (after a spontaneous
   // screen: the heat it covers)
@@ -549,6 +628,19 @@ function renderPreview(element, pos) {
   if (pos.view == "message" || item.kind == "screen") {
     element.append(textBlock("title", item.title), textBlock("screenText", item.text),
       textBlock("sub", pos.view == "message" ? "sofort angezeigt, nicht im Ablauf" : "Bildschirm im Ablauf"));
+    if (item.rows.length) {
+      let table = document.createElement("table");
+      for (const entry of item.rows) {
+        let texts = [entry.label, entry.name, entry.born, entry.time || "–"];
+        if (showClub)
+          texts.splice(2, 0, entry.club);
+        let row = table.insertRow();
+        for (const text of texts)
+          row.insertCell().textContent = text;
+        row.lastChild.classList.toggle("missing", !entry.time);
+      }
+      element.append(table);
+    }
     return;
   }
   let heat = item;
@@ -678,7 +770,8 @@ function sendState() {
     showClub,
     view,
     heat: view == "heat" ? item : null,
-    screen: screen ? { title: screen.title, text: screen.text } : null,
+    screen: screen ? { title: screen.title, text: screen.text, rows: screen.rows,
+      labelHeader: screen.labelHeader } : null,
     next,
   }, "*");
 }

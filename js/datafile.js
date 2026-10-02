@@ -5,7 +5,7 @@
 // Program version, shared by both windows. Change it with every update of
 // the program: a display window that was opened with an older version then
 // notices the difference and reloads itself (see display.js).
-const APP_VERSION = "2026-10-01.8";
+const APP_VERSION = "2026-10-02.1";
 
 // Accepts the format of data/data.js (`const json = {...};` with comments
 // and trailing commas) as well as plain JSON. The file is parsed, not executed.
@@ -95,7 +95,10 @@ function validateData(data) {
 // Optional additional screens between the heats (title and text), e.g.
 // { "after": { "competition": "8", "heat": "5" }, "title": "Siegerehrung",
 // "text": "Wettkämpfe 1–8" }. Without "after" the screen comes before the
-// first heat.
+// first heat. A screen may have a list, shown like a heat: entries
+// { "label": "1.", "athlete": "17", "time": 85.4 } (an athlete by id) or
+// { "label": "1.", "name": "Mustermann, Max", "born": "2012", "club": "…",
+// "time": "1:25,40" }; "labelHeader" names the first column (default "Platz").
 function validateScreens(data) {
   if (data.screens === undefined)
     return;
@@ -107,6 +110,26 @@ function validateScreens(data) {
       throw new Error(`${which} hat keinen Titel ("title")`);
     if (screen.text !== undefined && typeof screen.text != "string")
       throw new Error(`${which}: "text" muss ein Text sein`);
+    if (screen.labelHeader !== undefined && typeof screen.labelHeader != "string")
+      throw new Error(`${which}: "labelHeader" muss ein Text sein`);
+    if (screen.list !== undefined) {
+      if (!Array.isArray(screen.list))
+        throw new Error(`${which}: "list" muss eine Liste sein`);
+      let athletes = athleteMap(data.athletes);
+      screen.list.forEach((entry, j) => {
+        let where = `${which}, Listeneintrag ${j + 1}`;
+        if (entry?.athlete !== undefined && entry.athlete !== null && entry.athlete !== "") {
+          if (!athletes.has(String(entry.athlete).trim()))
+            throw new Error(`${where}: Athlet "${entry.athlete}" steht nicht in "athletes"`);
+        } else if (typeof entry?.name != "string" || entry.name.trim() == "") {
+          throw new Error(`${where} hat keinen Namen ("name" oder "athlete")`);
+        }
+        let time = entry.time;
+        if (!hasNoTime(time) && typeof time != "string"
+            && !(typeof time == "number" && Number.isFinite(time) && time > 0))
+          throw new Error(`${where}: Zeit ${JSON.stringify(time)} nicht erkannt`);
+      });
+    }
     if (screen.after === undefined || screen.after === null)
       return;
     let competition = data.startlist[String(screen.after.competition)];
@@ -119,10 +142,9 @@ function validateScreens(data) {
 // screens placed after it; screens without "after" come first.
 // Heats: { kind: "heat", ... }, screens: { kind: "screen", title, text }.
 function buildProgram(data) {
+  let athletes = athleteMap(data.athletes);
   let screens = (data.screens ?? []).map(screen => ({
-    kind: "screen",
-    title: screen.title.trim(),
-    text: (screen.text ?? "").trim(),
+    ...makeScreen(screen, athletes),
     after: screen.after ? `${screen.after.competition}/${screen.after.heat}` : "",
   }));
   let program = screens.filter(screen => screen.after == "");
@@ -132,6 +154,38 @@ function buildProgram(data) {
       screen.after == `${heat.competitionId}/${heat.heatId}`));
   }
   return program;
+}
+// A screen of the running order: { kind: "screen", title, text, list (as in
+// the data file), labelHeader, rows (the list as shown, see listRows) }
+function makeScreen(screen, athletes) {
+  let list = screen.list ?? [];
+  return {
+    kind: "screen",
+    title: screen.title.trim(),
+    text: (screen.text ?? "").trim(),
+    list,
+    labelHeader: (screen.labelHeader ?? "").trim(),
+    rows: listRows(list, athletes),
+  };
+}
+// The entries of a list as shown: label, name ("Nachname, Vorname"), name in
+// spoken order, club, year of birth and time ("1:25,40", or "" for none)
+function listRows(list, athletes) {
+  return list.map(entry => {
+    let id = athleteId(entry);
+    let athlete = id !== null ? athletes.get(id) : null;
+    let text = value => value === undefined || value === null ? "" : String(value).trim();
+    let name = athlete?.name ?? text(entry.name);
+    return {
+      label: text(entry.label),
+      name,
+      // "Mustermann, Max" is read out as "Max Mustermann"
+      spokenName: athlete?.spokenName ?? name.replace(/^([^,]+),\s*(.+)$/, "$2 $1"),
+      club: text(entry.club) || athlete?.club || "",
+      born: text(entry.born) || athlete?.born || "",
+      time: hasNoTime(entry.time) ? "" : typeof entry.time == "number" ? formatTime(entry.time) : text(entry.time),
+    };
+  });
 }
 // The "screens" entry for the data file from the running order: each screen
 // placed after the heat before it.
@@ -146,6 +200,8 @@ function screensOf(program) {
         ...(lastHeat ? { after: { competition: lastHeat.competitionId, heat: lastHeat.heatId } } : {}),
         title: item.title,
         ...(item.text ? { text: item.text } : {}),
+        ...(item.list.length ? { list: item.list } : {}),
+        ...(item.labelHeader ? { labelHeader: item.labelHeader } : {}),
       });
   }
   return screens;

@@ -19,19 +19,19 @@
    <div id="screenText"></div>
   </section>
   <header>
-   <h1>Wettkampf <span id="competitionId"></span> &ndash; <span id="competition"></span></h1>
+   <h1 id="heatTitle"></h1>
    <div id="heatBox">Lauf <span id="heat"></span>/<span id="heatCount"></span></div>
    <img src="img/logo.jpg" alt="">
   </header>
   <main>
    <table id="lanes">
     <tr>
-     <th class="lane">Bahn</th><th class="name">Name</th><th class="club">Verein</th><th class="born">Jahrgang</th><th class="time">Meldezeit</th>
+     <th class="lane" id="labelHeader">Bahn</th><th class="name">Name</th><th class="club">Verein</th><th class="born">Jahrgang</th><th class="time" id="timeHeader">Meldezeit</th>
     </tr>
-    <!-- one row per lane, built from the data file -->
+    <!-- one row per lane (or per list entry), see showRows() in display.js -->
    </table>
   </main>
-  <footer id="next">Als Nächstes: <span id="nextCompetition"></span></footer>
+  <footer id="next"><span id="nextLabel">Als Nächstes: </span><span id="nextCompetition"></span></footer>
   <div id="fullscreenHint">Klicken oder <kbd>F</kbd> drücken für Vollbild</div>
  </body>
 </html>

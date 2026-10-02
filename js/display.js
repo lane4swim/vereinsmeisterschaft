@@ -71,58 +71,75 @@ function reloadForUpdate(version) {
 function show(state) {
   document.title = `Anzeige – ${state.event}`;
   document.getElementById("welcomeName").textContent = state.event;
-  if (state.lanes != lanes)
-    buildLanes(state.lanes);
+  lanes = state.lanes;
   document.querySelector("main").classList.toggle("withClub", !!state.showClub);
-  document.body.className = state.view;
+  // a screen with a list uses the layout of a heat
+  let list = state.view == "screen" && state.screen.rows?.length > 0;
+  document.body.className = list ? "heat list" : state.view;
   document.getElementById("welcomeNext").hidden = !state.upcoming;
   document.getElementById("welcomeNextHeat").textContent = state.upcoming ?? "";
   if (state.view == "heat")
     showHeat(state.heat, state.next);
-  if (state.view == "screen") {
+  if (list)
+    showList(state.screen);
+  else if (state.view == "screen") {
     document.getElementById("screenTitle").textContent = state.screen.title;
     document.getElementById("screenText").textContent = state.screen.text;
   }
   fitAllText();
   showCursor();
 }
-// One table row per lane of the pool, so the layout is the same for all heats.
-function buildLanes(count) {
-  lanes = count;
-  let [first, last] = laneRange(count);
-  let table = document.getElementById("lanes");
-  table.querySelectorAll("tr.laneRow").forEach(row => row.remove());
-  for (let lane = first; lane <= last; ++lane) {
-    let row = document.createElement("tr");
-    row.className = "laneRow";
-    row.id = `lane${lane}`;
-    row.innerHTML = `<td class="lane">${lane}</td><td class="name" id="name${lane}"></td>`
-      + `<td class="club" id="club${lane}"></td>`
-      + `<td id="born${lane}"></td><td id="time${lane}"></td>`;
-    table.tBodies[0].appendChild(row);
-  }
-  document.querySelector("main").style.setProperty("--lanes", count);
-}
+// A heat: one table row per lane of the pool, so the layout is the same
+// for all heats; lanes without a swimmer show a greyed out dash.
 function showHeat(heat, next) {
-  document.getElementById("competition").textContent = heat.competitionName;
-  document.getElementById("competitionId").textContent = heat.competitionId;
+  document.getElementById("heatTitle").textContent =
+    `Wettkampf ${heat.competitionId} – ${heat.competitionName}`;
+  document.getElementById("heatBox").hidden = false;
   document.getElementById("heat").textContent = heat.heatId;
   document.getElementById("heatCount").textContent = heat.heatCount;
-  // lanes without a swimmer show a greyed out dash
-  document.querySelectorAll("tr.laneRow").forEach(row => {
-    let lane = row.id.slice(4);
+  let [first, last] = laneRange(lanes);
+  let rows = [];
+  for (let lane = first; lane <= last; ++lane) {
     let swimmer = heat.swimmers[lane];
-    row.classList.toggle("empty", !swimmer);
-    document.getElementById(`name${lane}`).textContent = swimmer ? swimmer.name : "–";
-    document.getElementById(`club${lane}`).textContent = swimmer ? swimmer.club : "";
-    document.getElementById(`born${lane}`).textContent = swimmer ? swimmer.born : "";
+    rows.push(swimmer ? { label: lane, ...swimmer } : { label: lane, empty: true });
+  }
+  showRows(rows, "Bahn", "Meldezeit");
+  showFooter(next ? "Als Nächstes: " : "", next ?? "");
+}
+// A screen with a list: same layout as a heat, with the screen title in the
+// header and its text (if any) in the bottom line instead of "Als Nächstes".
+function showList(screen) {
+  document.getElementById("heatTitle").textContent = screen.title;
+  document.getElementById("heatBox").hidden = true;
+  showRows(screen.rows, screen.labelHeader || "Platz", "Zeit");
+  showFooter("", screen.text.replace(/\s*\n\s*/g, " · "));
+}
+function showRows(rows, labelHeader, timeHeader) {
+  document.getElementById("labelHeader").textContent = labelHeader;
+  document.getElementById("timeHeader").textContent = timeHeader;
+  let body = document.getElementById("lanes").tBodies[0];
+  body.querySelectorAll("tr.laneRow").forEach(row => row.remove());
+  for (const entry of rows) {
+    let row = body.insertRow();
+    row.className = "laneRow";
+    row.classList.toggle("empty", !!entry.empty);
+    let cells = [["lane", entry.label], ["name", entry.empty ? "–" : entry.name],
+      ["club", entry.club], ["", entry.born],
+      ["", entry.empty ? "" : entry.time || "–"]];
+    for (const [className, text] of cells) {
+      let cell = row.insertCell();
+      cell.className = className;
+      cell.textContent = text ?? "";
+    }
     // an athlete without entry time gets a greyed out dash
-    let time = document.getElementById(`time${lane}`);
-    time.textContent = swimmer ? swimmer.time || "–" : "";
-    time.classList.toggle("missing", !!swimmer && !swimmer.time);
-  });
-  document.getElementById("next").hidden = !next;
-  document.getElementById("nextCompetition").textContent = next ?? "";
+    row.lastChild.classList.toggle("missing", !entry.empty && !entry.time);
+  }
+  document.querySelector("main").style.setProperty("--lanes", Math.max(rows.length, 1));
+}
+function showFooter(label, text) {
+  document.getElementById("next").hidden = !text;
+  document.getElementById("nextLabel").textContent = label;
+  document.getElementById("nextCompetition").textContent = text;
 }
 // Shrink text that does not fit its box (long names, long competition
 // names) instead of cutting it off. Names, clubs and the title that would
