@@ -65,7 +65,7 @@ body.loaded {
 #control {
     display: grid;
     grid-template-columns: minmax(16em, 22em) 1fr;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
     height: 100vh;
     overflow: hidden;
 }
@@ -266,9 +266,15 @@ body.loaded {
     opacity: 0.4;
     cursor: default;
 }
+/* key hints in a bar right below the header */
 #keyHelp {
+    grid-column: 1 / -1;
     margin: 0;
-    color: #444;
+    padding: 0.35em 1em;
+    border-bottom: 1px solid #ccc;
+    background: #e8eaf6;
+    color: #333;
+    font-size: 0.9em;
 }
 kbd {
     padding: 0 0.3em;
