@@ -85,6 +85,7 @@ function init() {
       event.preventDefault();
   });
   setInterval(updateStatus, 1000);
+  showOfflineState();
   updateClock();
   setInterval(updateClock, 1000);
 }
@@ -714,6 +715,30 @@ function buildProgramView() {
     }
     button.addEventListener("click", jump);
     group.appendChild(button);
+  });
+}
+
+/* ================= OFFLINE OPERATION =================  */
+// Whether all files are stored for operation without internet (see sw.js),
+// shown at the right of the key hints.
+async function showOfflineState() {
+  let element = document.getElementById("offlineState");
+  if (location.protocol == "file:") {
+    element.textContent = "als Datei geöffnet – läuft ohne Internet";
+    element.className = "ok";
+    return;
+  }
+  element.textContent = "Offline-Betrieb wird vorbereitet …";
+  // on the very first visit the worker also takes over: no new version
+  let hadVersion = !!navigator.serviceWorker?.controller;
+  let ready = await offlineReady;
+  element.textContent = ready ? "✓ offline verfügbar" : "nicht offline verfügbar";
+  element.className = ready ? "ok" : "warn";
+  // a new program version was stored (e.g. after an update on the server)
+  navigator.serviceWorker?.addEventListener("controllerchange", () => {
+    if (hadVersion)
+      showNotice("Eine neue Programmversion wurde geladen. Sie gilt nach dem Neuladen der Seite.");
+    hadVersion = true;
   });
 }
 

@@ -573,3 +573,13 @@ kbd {
     font-size: 0.85em;
     color: #555;
 }
+#offlineState {
+    float: right;
+    font-size: 0.9em;
+}
+#offlineState.ok {
+    color: #1b7a3a;
+}
+#offlineState.warn {
+    color: #b00020;
+}
