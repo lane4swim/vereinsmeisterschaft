@@ -73,27 +73,55 @@
     </div>
     <details id="screenEditor">
      <summary>Bildschirme mit eigenem Text und Listen</summary>
-     <label>Bearbeiten <select id="screenSelect"></select></label>
-     <label>Titel <input type="text" id="screenTitle" placeholder="z. B. Siegerehrung"></label>
-     <label>Text <textarea id="screenText" rows="2" placeholder="optional, mehrere Zeilen möglich"></textarea></label>
-     <label>Liste <textarea id="screenList" rows="4"
-       placeholder="optional, eine Zeile pro Eintrag: Platz; Name; Jahrgang; Zeit; Verein&#10;z. B. 1.; Mustermann, Max; 2012; 1:25,40; WSV Schermbeck"></textarea></label>
-     <label>Spaltenkopf <input type="text" id="screenLabelHeader" placeholder="Platz"></label>
-     <div class="actions">
-      <button id="screenShow">Sofort anzeigen</button>
-      <button id="screenInsert">In Ablauf einfügen</button>
-      <label class="inline">nach <select id="screenAfter"></select></label>
+     <div class="form">
+      <label for="screenSelect">Bearbeiten</label>
+      <select id="screenSelect"></select>
+
+      <label for="screenTitle">Titel</label>
+      <input type="text" id="screenTitle" placeholder="z. B. Siegerehrung">
+
+      <label for="screenText">Text</label>
+      <textarea id="screenText" rows="2" placeholder="optional, mehrere Zeilen möglich"></textarea>
+
+      <label for="screenList">Liste</label>
+      <textarea id="screenList" rows="4"
+       placeholder="optional, eine Zeile pro Eintrag: Platz; Name; Jahrgang; Zeit; Verein&#10;z. B. 1.; Mustermann, Max; 2012; 1:25,40; WSV Schermbeck"></textarea>
+
+      <label for="screenHeader-label">Spaltenköpfe</label>
+      <div class="headers">
+       <input type="text" id="screenHeader-label" placeholder="Platz" aria-label="Spaltenkopf 1">
+       <input type="text" id="screenHeader-name" placeholder="Name" aria-label="Spaltenkopf Name">
+       <input type="text" id="screenHeader-born" placeholder="Jahrgang" aria-label="Spaltenkopf Jahrgang">
+       <input type="text" id="screenHeader-time" placeholder="Zeit" aria-label="Spaltenkopf Zeit">
+       <input type="text" id="screenHeader-club" placeholder="Verein" aria-label="Spaltenkopf Verein">
+      </div>
+
+      <label for="screenAfter">Einfügen nach</label>
+      <div class="row">
+       <select id="screenAfter"></select>
+       <button id="screenInsert">In Ablauf einfügen</button>
+      </div>
+
+      <span class="label">Anzeigen</span>
+      <div class="row">
+       <button id="screenShow">Sofort anzeigen</button>
+       <span class="note">nur jetzt, ohne Aufnahme in den Ablauf</span>
+      </div>
+
+      <span class="label" id="screenCurrentLabel">Ausgewählter Bildschirm</span>
+      <div class="row" id="screenCurrent">
+       <button id="screenChange">Bildschirm ändern</button>
+       <button id="screenEarlier">&#9650; früher</button>
+       <button id="screenLater">&#9660; später</button>
+       <button id="screenDelete">Löschen</button>
+      </div>
+
+      <p class="hint">Bildschirme im Ablauf werden mit „Weiter“ angezeigt. Unter „Bearbeiten“ lässt sich auch
+       ein späterer Bildschirm ändern, ohne ihn anzuzeigen. Eine Liste erscheint auf der Anzeige wie ein
+       Lauf; die Spaltenköpfe stehen in derselben Reihenfolge wie die Angaben einer Listenzeile, leere
+       behalten die grau vorgegebene Bezeichnung. Mit „Speichern“ oben werden
+       Startliste und Bildschirme als JSON-Datei gesichert.</p>
      </div>
-     <div class="actions" id="screenCurrent">
-      <button id="screenChange" hidden>Bildschirm ändern</button>
-      <button id="screenEarlier" hidden>&#9650; früher</button>
-      <button id="screenLater" hidden>&#9660; später</button>
-      <button id="screenDelete" hidden>Löschen</button>
-     </div>
-     <p class="hint">Bildschirme im Ablauf werden mit „Weiter“ angezeigt; unter „Bearbeiten“ lässt sich
-      auch ein späterer Bildschirm ändern, ohne ihn anzuzeigen. „Sofort anzeigen“ zeigt den Bildschirm
-      nur jetzt, ohne ihn in den Ablauf aufzunehmen. Eine Liste erscheint auf der Anzeige wie ein Lauf.
-      Mit „Speichern“ werden Startliste und Bildschirme als JSON-Datei gesichert.</p>
     </details>
     <p id="keyHelp">
      <kbd>→</kbd> / <kbd>Leertaste</kbd> weiter &middot; <kbd>←</kbd> zurück &middot;

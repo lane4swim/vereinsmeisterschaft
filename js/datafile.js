@@ -5,7 +5,7 @@
 // Program version, shared by both windows. Change it with every update of
 // the program: a display window that was opened with an older version then
 // notices the difference and reloads itself (see display.js).
-const APP_VERSION = "2026-10-02.1";
+const APP_VERSION = "2026-10-02.2";
 
 // Accepts the format of data/data.js (`const json = {...};` with comments
 // and trailing commas) as well as plain JSON. The file is parsed, not executed.
@@ -98,7 +98,8 @@ function validateData(data) {
 // first heat. A screen may have a list, shown like a heat: entries
 // { "label": "1.", "athlete": "17", "time": 85.4 } (an athlete by id) or
 // { "label": "1.", "name": "Mustermann, Max", "born": "2012", "club": "…",
-// "time": "1:25,40" }; "labelHeader" names the first column (default "Platz").
+// "time": "1:25,40" }; "headers" can rename the columns, e.g. { "label":
+// "Rang", "time": "Endzeit" } (see LIST_HEADERS for the defaults).
 function validateScreens(data) {
   if (data.screens === undefined)
     return;
@@ -112,6 +113,17 @@ function validateScreens(data) {
       throw new Error(`${which}: "text" muss ein Text sein`);
     if (screen.labelHeader !== undefined && typeof screen.labelHeader != "string")
       throw new Error(`${which}: "labelHeader" muss ein Text sein`);
+    if (screen.headers !== undefined) {
+      if (typeof screen.headers != "object" || screen.headers === null || Array.isArray(screen.headers))
+        throw new Error(`${which}: "headers" muss ein Objekt sein, z. B. { "label": "Rang" }`);
+      for (const key in screen.headers) {
+        if (!(key in LIST_HEADERS))
+          throw new Error(`${which}: unbekannte Spalte "${key}" in "headers" `
+            + `(möglich: ${Object.keys(LIST_HEADERS).join(", ")})`);
+        if (typeof screen.headers[key] != "string")
+          throw new Error(`${which}: Spaltenkopf "${key}" muss ein Text sein`);
+      }
+    }
     if (screen.list !== undefined) {
       if (!Array.isArray(screen.list))
         throw new Error(`${which}: "list" muss eine Liste sein`);
@@ -155,18 +167,32 @@ function buildProgram(data) {
   }
   return program;
 }
+// Column headers of a list on a screen, unless the screen renames them
+const LIST_HEADERS = { label: "Platz", name: "Name", club: "Verein", born: "Jahrgang", time: "Zeit" };
 // A screen of the running order: { kind: "screen", title, text, list (as in
-// the data file), labelHeader, rows (the list as shown, see listRows) }
+// the data file), headers (only the renamed columns), rows (the list as
+// shown, see listRows) }. The former "labelHeader" is read as headers.label.
 function makeScreen(screen, athletes) {
   let list = screen.list ?? [];
+  let headers = {};
+  let given = { ...(screen.labelHeader ? { label: screen.labelHeader } : {}), ...screen.headers };
+  for (const key in LIST_HEADERS) {
+    let text = (given[key] ?? "").trim();
+    if (text != "" && text != LIST_HEADERS[key])
+      headers[key] = text;
+  }
   return {
     kind: "screen",
     title: screen.title.trim(),
     text: (screen.text ?? "").trim(),
     list,
-    labelHeader: (screen.labelHeader ?? "").trim(),
+    headers,
     rows: listRows(list, athletes),
   };
+}
+// all column headers of a screen's list, defaults filled in
+function listHeaders(screen) {
+  return { ...LIST_HEADERS, ...screen.headers };
 }
 // The entries of a list as shown: label, name ("Nachname, Vorname"), name in
 // spoken order, club, year of birth and time ("1:25,40", or "" for none)
@@ -201,7 +227,7 @@ function screensOf(program) {
         title: item.title,
         ...(item.text ? { text: item.text } : {}),
         ...(item.list.length ? { list: item.list } : {}),
-        ...(item.labelHeader ? { labelHeader: item.labelHeader } : {}),
+        ...(Object.keys(item.headers).length ? { headers: item.headers } : {}),
       });
   }
   return screens;

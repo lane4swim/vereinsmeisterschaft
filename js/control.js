@@ -337,14 +337,18 @@ function screenFields() {
     showNotice(`Listenzeile ${nameless + 1} hat keinen Namen (Platz; Name; Jahrgang; Zeit; Verein).`);
     return null;
   }
-  return makeScreen({ title, text: value("screenText"), list, labelHeader: value("screenLabelHeader") },
+  let headers = {};
+  for (const key in LIST_HEADERS)
+    headers[key] = value(`screenHeader-${key}`);
+  return makeScreen({ title, text: value("screenText"), list, headers },
     athleteMap(data.athletes));
 }
 // the editor fields for a screen (empty for a new one)
 function fillScreenFields(screen) {
   document.getElementById("screenTitle").value = screen?.title ?? "";
   document.getElementById("screenText").value = screen?.text ?? "";
-  document.getElementById("screenLabelHeader").value = screen?.labelHeader ?? "";
+  for (const key in LIST_HEADERS)
+    document.getElementById(`screenHeader-${key}`).value = screen?.headers[key] ?? "";
   document.getElementById("screenList").value = (screen?.rows ?? []).map(row =>
     [row.label, row.name, row.born, row.time, row.club].join("; ").replace(/(; )+$/, "")).join("\n");
 }
@@ -356,10 +360,10 @@ function showMessage() {
   message = screen;
   update();
 }
+// The editor fields keep what was typed, e.g. to insert the same screen
+// into the running order afterwards.
 function hideMessage() {
   message = null;
-  // the fields held the spontaneous screen; show the edited screen again
-  fillScreenFields(program[editIndex]);
   update();
 }
 // new screen in the running order after the entry chosen in "Einfügen nach"
@@ -450,8 +454,8 @@ function updateEditor() {
   select.value = editIndex === null ? "new" : editIndex;
   after.value = afterChoice < program.length || afterChoice == "current" ? afterChoice : "current";
   let editing = editIndex !== null;
-  for (const id of ["screenChange", "screenEarlier", "screenLater", "screenDelete"])
-    document.getElementById(id).hidden = !editing;
+  document.getElementById("screenCurrent").hidden = !editing;
+  document.getElementById("screenCurrentLabel").hidden = !editing;
   if (editing)
     document.getElementById("screenChange").textContent = `Bildschirm „${program[editIndex].title}“ ändern`;
   document.getElementById("screenEarlier").disabled = !editing || editIndex == 0;
@@ -533,7 +537,8 @@ function renderAnnouncer() {
     if (screen.rows.length) {
       let table = document.createElement("table");
       let head = table.createTHead().insertRow();
-      for (const text of [screen.labelHeader || "Platz", "Name", "Verein", "Jg.", "Zeit"])
+      let headers = listHeaders(screen);
+      for (const text of [headers.label, headers.name, headers.club, headers.born, headers.time])
         head.appendChild(document.createElement("th")).textContent = text;
       let body = table.createTBody();
       for (const entry of screen.rows) {
@@ -771,7 +776,7 @@ function sendState() {
     view,
     heat: view == "heat" ? item : null,
     screen: screen ? { title: screen.title, text: screen.text, rows: screen.rows,
-      labelHeader: screen.labelHeader } : null,
+      headers: listHeaders(screen) } : null,
     next,
   }, "*");
 }

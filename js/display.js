@@ -103,7 +103,7 @@ function showHeat(heat, next) {
     let swimmer = heat.swimmers[lane];
     rows.push(swimmer ? { label: lane, ...swimmer } : { label: lane, empty: true });
   }
-  showRows(rows, "Bahn", "Meldezeit");
+  showRows(rows, { label: "Bahn", name: "Name", club: "Verein", born: "Jahrgang", time: "Meldezeit" });
   showFooter(next ? "Als Nächstes: " : "", next ?? "");
 }
 // A screen with a list: same layout as a heat, with the screen title in the
@@ -111,12 +111,13 @@ function showHeat(heat, next) {
 function showList(screen) {
   document.getElementById("heatTitle").textContent = screen.title;
   document.getElementById("heatBox").hidden = true;
-  showRows(screen.rows, screen.labelHeader || "Platz", "Zeit");
+  showRows(screen.rows, screen.headers);
   showFooter("", screen.text.replace(/\s*\n\s*/g, " · "));
 }
-function showRows(rows, labelHeader, timeHeader) {
-  document.getElementById("labelHeader").textContent = labelHeader;
-  document.getElementById("timeHeader").textContent = timeHeader;
+// rows of the table; headers: { label, name, club, born, time }
+function showRows(rows, headers) {
+  for (const key in headers)
+    document.getElementById(`${key}Header`).textContent = headers[key];
   let body = document.getElementById("lanes").tBodies[0];
   body.querySelectorAll("tr.laneRow").forEach(row => row.remove());
   for (const entry of rows) {

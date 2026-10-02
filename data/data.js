@@ -31,14 +31,14 @@ const json = {
   },
   /* optional: screens with title and text between the heats, shown with
      "Weiter"; without "after" a screen comes before the first heat.
-     A screen may have a list, shown like a heat ("labelHeader" names the
-     first column, default "Platz"); an entry names an athlete by id or
-     gives "name", "born", "club" and "time" itself.
+     A screen may have a list, shown like a heat; an entry names an athlete
+     by id or gives "name", "born", "club" and "time" itself. "headers" can
+     rename the columns "label" (Platz), "name", "club", "born" and "time".
      The control window can add and change them and save everything. */
   "screens": [
     { "after": { "competition": "1", "heat": "1" }, "title": "Pause", "text": "Weiter um 12:30 Uhr" },
     { "after": { "competition": "1", "heat": "1" }, "title": "Siegerehrung", "text": "100 m Brust",
-      "labelHeader": "Platz", "list": [
+      "headers": { "label": "Platz", "time": "Endzeit" }, "list": [
         { "label": "1.", "athlete": "1", "time": 85.4 },
         { "label": "2.", "name": "Gast, Greta", "born": "2010", "club": "SV Dorsten", "time": "1:30,00" }
       ] }

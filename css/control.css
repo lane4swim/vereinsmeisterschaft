@@ -489,7 +489,7 @@ kbd {
     font-size: 0.65em;
     color: #444;
 }
-/* editor for screens */
+/* editor for screens: labels on the left, fields of equal width on the right */
 #screenEditor {
     padding: 0.6em 0.8em;
     border: 1px solid #ccc;
@@ -499,49 +499,71 @@ kbd {
     font-weight: bold;
     cursor: pointer;
 }
-#screenEditor label {
-    display: flex;
-    gap: 0.5em;
-    margin-top: 0.6em;
+#screenEditor .form {
+    display: grid;
+    grid-template-columns: 9em minmax(0, 1fr);
+    align-items: center;
+    gap: 0.5em 0.8em;
+    margin-top: 0.8em;
+}
+#screenEditor .form > label,
+#screenEditor .form > .label {
+    align-self: start;
+    padding-top: 0.35em;
+    color: #333;
 }
 #screenEditor input,
-#screenEditor textarea {
-    flex: 1;
+#screenEditor textarea,
+#screenEditor select {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 0.3em 0.4em;
+    border: 1px solid #999;
+    border-radius: 0.3em;
     font: inherit;
 }
-#screenEditor .actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5em;
-    margin-top: 0.6em;
+#screenEditor textarea {
+    resize: vertical;
 }
-#screenEditor .actions button {
+#screenEditor .headers {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.5em;
+}
+#screenEditor .row {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    min-width: 0;
+}
+#screenEditor .row select {
+    flex: 1;
+}
+#screenEditor .row[hidden],
+#screenEditor .label[hidden] {
+    display: none;
+}
+#screenEditor button {
+    flex: none;
     padding: 0.3em 0.8em;
     border: 2px solid #373f94;
     border-radius: 0.3em;
     background: #ffffff;
     color: #373f94;
+    white-space: nowrap;
 }
-#screenEditor .actions button:disabled {
+#screenEditor button:disabled {
     opacity: 0.4;
+    cursor: default;
 }
-#screenEditor .actions button[hidden] {
-    display: none;
+#screenEditor .note {
+    color: #555;
+    font-size: 0.9em;
 }
 #screenEditor .hint {
-    margin: 0.6em 0 0;
+    grid-column: 2;
+    margin: 0.2em 0 0;
     font-size: 0.85em;
     color: #555;
-}
-#screenEditor select {
-    flex: 1;
-    font: inherit;
-}
-#screenEditor label.inline {
-    margin-top: 0;
-    align-items: center;
-    flex: 1;
-}
-#screenEditor #screenLabelHeader {
-    flex: 0 1 12em;
 }
